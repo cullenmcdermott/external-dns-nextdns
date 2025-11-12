@@ -19,9 +19,8 @@ const (
 
 // Server represents the webhook HTTP server
 type Server struct {
-	config   *nextdns.Config
-	provider provider.Provider
-	apiServer *http.Server
+	config       *nextdns.Config
+	provider     provider.Provider
 	healthServer *http.Server
 }
 
@@ -42,32 +41,6 @@ func NewServer(config *nextdns.Config, provider provider.Provider) (*Server, err
 
 // Start starts the webhook server
 func (s *Server) Start(ctx context.Context) error {
-	// Create the webhook API handler using external-dns webhook API
-	mux := http.NewServeMux()
-
-	// This will automatically set up the required endpoints:
-	// GET / - Domain filter
-	// GET /records - Get records
-	// POST /records - Apply changes
-	// POST /adjustendpoints - Adjust endpoints
-	apiHandler, err := api.NewHandler(
-		s.provider,
-		api.WithHandlerLogging(log.StandardLogger()),
-	)
-	if err != nil {
-		return fmt.Errorf("failed to create API handler: %w", err)
-	}
-
-	mux.Handle("/", apiHandler)
-
-	// Setup API server (webhook endpoints)
-	s.apiServer = &http.Server{
-		Addr:         fmt.Sprintf("127.0.0.1:%d", s.config.ServerPort),
-		Handler:      mux,
-		ReadTimeout:  defaultTimeout,
-		WriteTimeout: defaultTimeout,
-	}
-
 	// Setup health server
 	healthMux := http.NewServeMux()
 	healthMux.HandleFunc("/healthz", s.handleHealth)
@@ -80,17 +53,8 @@ func (s *Server) Start(ctx context.Context) error {
 		WriteTimeout: 10 * time.Second,
 	}
 
-	// Start servers in goroutines
-	apiErrChan := make(chan error, 1)
+	// Start health server in goroutine
 	healthErrChan := make(chan error, 1)
-
-	go func() {
-		log.Infof("Starting API server on %s", s.apiServer.Addr)
-		if err := s.apiServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			apiErrChan <- err
-		}
-	}()
-
 	go func() {
 		log.Infof("Starting health server on %s", s.healthServer.Addr)
 		if err := s.healthServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -98,13 +62,33 @@ func (s *Server) Start(ctx context.Context) error {
 		}
 	}()
 
+	// Start API server using external-dns webhook API
+	// This will automatically set up the required endpoints:
+	// GET / - Domain filter
+	// GET /records - Get records
+	// POST /records - Apply changes
+	// POST /adjustendpoints - Adjust endpoints
+	startedChan := make(chan struct{})
+	go func() {
+		log.Infof("Starting webhook API server on port %d", s.config.ServerPort)
+		api.StartHTTPApi(
+			s.provider,
+			startedChan,
+			defaultTimeout,
+			defaultTimeout,
+			fmt.Sprintf("%d", s.config.ServerPort),
+		)
+	}()
+
+	// Wait for API server to start
+	<-startedChan
+	log.Info("Webhook API server started successfully")
+
 	// Wait for context cancellation or server error
 	select {
 	case <-ctx.Done():
 		log.Info("Shutting down servers...")
 		return s.shutdown()
-	case err := <-apiErrChan:
-		return fmt.Errorf("API server error: %w", err)
 	case err := <-healthErrChan:
 		return fmt.Errorf("health server error: %w", err)
 	}
@@ -115,23 +99,15 @@ func (s *Server) shutdown() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	var apiErr, healthErr error
-
-	if s.apiServer != nil {
-		apiErr = s.apiServer.Shutdown(ctx)
-	}
-
 	if s.healthServer != nil {
-		healthErr = s.healthServer.Shutdown(ctx)
+		if err := s.healthServer.Shutdown(ctx); err != nil {
+			return fmt.Errorf("health server shutdown error: %w", err)
+		}
 	}
 
-	if apiErr != nil {
-		return fmt.Errorf("API server shutdown error: %w", apiErr)
-	}
-	if healthErr != nil {
-		return fmt.Errorf("health server shutdown error: %w", healthErr)
-	}
-
+	// Note: StartHTTPApi doesn't provide a shutdown mechanism
+	// The server will exit when the process terminates
+	log.Info("Servers shut down successfully")
 	return nil
 }
 

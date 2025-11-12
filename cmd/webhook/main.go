@@ -10,7 +10,6 @@ import (
 	"github.com/cullenmcdermott/external-dns-nextdns-webhook/internal/nextdns"
 	"github.com/cullenmcdermott/external-dns-nextdns-webhook/pkg/webhook"
 	log "github.com/sirupsen/logrus"
-	"sigs.k8s.io/external-dns/provider/webhook/api"
 )
 
 const (

@@ -43,39 +43,58 @@ This document outlines the complete implementation plan for the NextDNS webhook 
 
 ---
 
-### Phase 2: NextDNS API Integration ⏳ NEXT
+### Phase 2: NextDNS API Integration ⏳ IN PROGRESS
 
 **Goal**: Implement actual NextDNS API calls using the Go SDK
 
-#### 2.1 Dependency Management
+#### 2.1 Dependency Management ✅ COMPLETE
 
-- [ ] Add `github.com/amalucelli/nextdns-go` to go.mod
-- [ ] Add `sigs.k8s.io/external-dns` dependencies
-- [ ] Add `github.com/sirupsen/logrus` for logging
-- [ ] Run `go mod tidy`
-- [ ] Test that dependencies resolve
+- [x] Add `github.com/amalucelli/nextdns-go` to go.mod
+- [x] Add `sigs.k8s.io/external-dns` dependencies
+- [x] Add `github.com/sirupsen/logrus` for logging
+- [x] Run `go mod tidy`
+- [x] Test that dependencies resolve
 
-#### 2.2 NextDNS Client Setup
+**Notes**:
+- Fixed external-dns webhook API compatibility issues (v0.19.0 uses `StartHTTPApi`)
+- Fixed `GetDomainFilter` to return `DomainFilterInterface` instead of `DomainFilter`
+- All dependencies properly resolved
 
-**File**: `internal/nextdns/client.go` (NEW)
+#### 2.2 NextDNS Client Setup ✅ COMPLETE
 
-- [ ] Create NextDNS client wrapper
-- [ ] Initialize client with API key and profile ID
-- [ ] Add connection testing method
-- [ ] Add error handling for API failures
-- [ ] Update provider.go to use client
+**File**: `internal/nextdns/client.go` ✅ CREATED
 
-#### 2.3 Records Fetching (GET /records)
+- [x] Create NextDNS client wrapper
+- [x] Initialize client with API key and profile ID
+- [x] Add connection testing method
+- [x] Add error handling for API failures
+- [x] Update provider.go to use client
+
+**Implementation Details**:
+- Client uses `github.com/amalucelli/nextdns-go/nextdns` SDK
+- Supports dry-run mode for testing
+- Implements CRUD operations: GetRewrites, CreateRewrite, UpdateRewrite, DeleteRewrite
+- FindRewriteByName helper method for lookups
+- Proper error handling and structured logging
+
+#### 2.3 Records Fetching (GET /records) ✅ COMPLETE
 
 **File**: `internal/nextdns/provider.go`
 
-- [ ] Implement `Records()` method
-- [ ] Fetch all DNS rewrites from NextDNS API
-- [ ] Convert NextDNS rewrites to external-dns Endpoints
-- [ ] Handle pagination if needed
-- [ ] Add error handling and logging
+- [x] Implement `Records()` method
+- [x] Fetch all DNS rewrites from NextDNS API
+- [x] Convert NextDNS rewrites to external-dns Endpoints
+- [x] Handle pagination if needed (not required - API returns all)
+- [x] Add error handling and logging
 
 **NextDNS API**: `GET /profiles/{profileId}/rewrites`
+
+**Implementation Details**:
+- Converts NextDNS `Rewrites` to external-dns `Endpoint` objects
+- Implements `determineRecordType()` to detect A/AAAA/CNAME from content
+- Stores NextDNS rewrite ID in `ProviderSpecific` metadata for updates/deletes
+- Filters unsupported record types
+- Proper error handling and logging
 
 #### 2.4 Record Creation
 
@@ -339,21 +358,29 @@ This document outlines the complete implementation plan for the NextDNS webhook 
 ### Overall Progress
 
 - [x] Phase 1: Scaffolding (100%)
-- [ ] Phase 2: API Integration (0%)
+- [~] Phase 2: API Integration (43%) - 3 of 7 sub-phases complete
 - [ ] Phase 3: Testing (0%)
 - [ ] Phase 4: Kubernetes Integration (0%)
 - [ ] Phase 5: Advanced Features (0%)
 - [ ] Phase 6: Documentation & Release (0%)
 
-**Overall**: 16.7% Complete
+**Overall**: 23.9% Complete (Phase 1: 16.7% + Phase 2: 7.2%)
 
 ### Current Sprint Focus
 
 **Sprint 1**: ✅ Complete
 - Scaffolding and project setup
 
-**Sprint 2**: ⏳ Next (Recommended for next chat)
-- Phase 2.1-2.3: Dependency setup and Records fetching
+**Sprint 2**: ✅ Complete (2025-11-12)
+- Phase 2.1: Dependency Management ✅
+- Phase 2.2: NextDNS Client Setup ✅
+- Phase 2.3: Records Fetching ✅
+
+**Sprint 3**: ⏳ Next (Recommended for next session)
+- Phase 2.4: Record Creation (with overwrite protection)
+- Phase 2.5: Record Updates
+- Phase 2.6: Record Deletion
+- Phase 2.7: Record Type Validation
 
 ---
 
@@ -442,6 +469,16 @@ This document outlines the complete implementation plan for the NextDNS webhook 
 - Webhook architecture is mandatory for new providers
 - amalucelli/nextdns-go SDK exists and is mature
 - Good reference implementations exist for guidance
+
+### Session 2 (2025-11-12): API Integration (Phase 2.1-2.3)
+- External-dns v0.19.0 uses `StartHTTPApi` instead of handler-based approach
+- The `GetDomainFilter()` must return `DomainFilterInterface` (pointer type)
+- NextDNS SDK uses `Rewrites` (plural) for the type and service names
+- NextDNS API structure uses request objects (e.g., `CreateRewritesRequest`)
+- NextDNS rewrite fields: `ID`, `Name`, `Type`, `Content` (not `Answer`)
+- Record type detection needed: Type field may be empty for A/AAAA records
+- Storing NextDNS ID in `ProviderSpecific` metadata enables efficient updates
+- NextDNS API doesn't have separate Update endpoint (delete + create pattern)
 
 ---
 
