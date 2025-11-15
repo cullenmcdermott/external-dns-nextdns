@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nextdns-webhook-config
+  namespace: external-dns
+  labels:
+    app.kubernetes.io/name: nextdns-webhook
+data:
+  # Server Configuration
+  SERVER_PORT: "8888"
+  HEALTH_PORT: "8080"
+
+  # Behavior Configuration
+  DRY_RUN: "false"
+  ALLOW_OVERWRITE: "false"
+  LOG_LEVEL: "info"
+
+  # DNS Record Configuration
+  SUPPORTED_RECORDS: "A,AAAA,CNAME"
+  DEFAULT_TTL: "300"
+
+  # NextDNS API Configuration
+  NEXTDNS_BASE_URL: "https://api.nextdns.io"
+
+  # Domain Filtering (comma-separated list, leave empty for no filter)
+  # Example: "example.com,example.org"
+  DOMAIN_FILTER: ""
