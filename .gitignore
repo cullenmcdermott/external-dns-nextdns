@@ -39,3 +39,25 @@ secrets/
 # Temporary files
 tmp/
 temp/
+
+# Flox environment cache
+.flox/cache/
+.flox/run/
+
+# Air hot-reload artifacts
+.air.toml.bak
+build-errors.log
+
+# Test coverage reports
+coverage.out
+coverage.html
+
+# Binary outputs
+webhook
+webhook-linux-amd64
+
+# Just command artifacts
+.just/
+
+# Vendor directory (if using vendoring)
+vendor/

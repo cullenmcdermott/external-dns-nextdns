@@ -271,7 +271,8 @@ if err != nil {
   - Non-root user (webhook:webhook, UID 1000)
   - Health checks configured
   - Minimal Alpine-based final image
-- ✅ Makefile created with development targets (build, run, test, docker-build, etc.)
+- ✅ Justfile created with development targets (build, run, test, docker-build, etc.)
+- ✅ Flox development environment configured with Go toolchain, kind, kubectl, and dev tools
 - ✅ Documentation created (README.md, IMPLEMENTATION_PLAN.md, CLAUDE.md)
 - ✅ Example environment file (.env.example)
 - ✅ .gitignore configured
@@ -321,7 +322,7 @@ if err != nil {
 - [ ] Understand current phase (Phase 2: API Integration is next)
 - [ ] Identify task to work on (consult IMPLEMENTATION_PLAN.md)
 - [ ] Implement changes following existing patterns
-- [ ] Run `make check` to format and vet code
+- [ ] Run `just check` to format and vet code
 - [ ] Update IMPLEMENTATION_PLAN.md with progress
 - [ ] Update README.md if user-facing changes
 - [ ] Test changes (at minimum with dry-run mode)
@@ -420,43 +421,81 @@ Good examples to learn from:
 
 ## 🚀 Quick Reference Commands
 
-### Using the Makefile (Recommended)
+### Using Flox (Recommended)
 
 ```bash
-# Show all available targets
-make help
+# Activate the Flox development environment
+flox activate
+
+# This will:
+# - Set up Go toolchain and development tools
+# - Configure environment variables
+# - Download Go dependencies
+# - Set up isolated Go cache
+
+# Start services (e.g., kind cluster)
+flox services start
+
+# Check service status
+flox services status
+
+# View service logs
+flox services logs kind
+
+# Stop services
+flox services stop
+```
+
+### Using Just (Task Runner)
+
+```bash
+# Show all available commands
+just
+
+# Or get detailed help
+just help
 
 # Build the binary
-make build
+just build
 
 # Run locally (requires NEXTDNS_API_KEY and NEXTDNS_PROFILE_ID env vars)
 export NEXTDNS_API_KEY="your-key"
 export NEXTDNS_PROFILE_ID="your-profile"
-make run
+just run
+
+# Run with hot-reload
+just dev
 
 # Run tests
-make test
+just test
 
 # Run tests with coverage report
-make test-coverage
+just test-coverage
 
 # Format and vet code
-make check
+just check
 
 # Build Docker image
-make docker-build
+just docker-build
 
 # Run in Docker (with dry-run enabled)
-make docker-run
+just docker-run
 
 # Download dependencies
-make deps
+just deps
 
 # Tidy dependencies
-make tidy
+just tidy
 
 # Clean build artifacts
-make clean
+just clean
+
+# Kubernetes commands
+just kind-up        # Create kind cluster
+just kind-down      # Delete kind cluster
+just kind-status    # Show cluster status
+just k8s-deploy     # Deploy to kind
+just k8s-logs       # View webhook logs
 ```
 
 ### Development Commands (Manual)
@@ -572,6 +611,7 @@ git push -u origin claude/claude-md-mi0lc1gamjb16ctl-01PHiWAmEzqLmdXNhw7MWXHq
 
 - **v1.0** (2025-11-11): Initial creation after scaffolding phase
 - **v1.1** (2025-11-15): Updated with detailed implementation status, git workflow, and Makefile commands
+- **v1.2** (2025-11-15): Migrated to Flox development environment and Just task runner
 
 ---
 

@@ -1,0 +1,175 @@
+# Flox Environment Manifest for external-dns-nextdns-webhook
+# This manifest defines the complete development environment including:
+# - Go toolchain and development tools
+# - Kubernetes testing tools (kind, kubectl)
+# - Container tools (Docker)
+# - Code quality tools (linters, formatters)
+# - Task runner (Just)
+
+version = 1
+
+[install]
+# Go toolchain - pinned to stable version
+go.pkg-path = "go"
+go.version = "^1.23.0"
+go.pkg-group = "build"
+
+# Go development tools
+golangci-lint.pkg-path = "golangci-lint"
+golangci-lint.pkg-group = "dev"
+
+delve.pkg-path = "delve"  # Go debugger
+delve.pkg-group = "dev"
+
+go-tools.pkg-path = "gotools"  # godoc, goimports, etc.
+go-tools.pkg-group = "dev"
+
+# Kubernetes tools
+kind.pkg-path = "kind"
+kind.pkg-group = "k8s"
+
+kubectl.pkg-path = "kubectl"
+kubectl.pkg-group = "k8s"
+
+helm.pkg-path = "kubernetes-helm"
+helm.pkg-group = "k8s"
+
+# Container tools
+docker.pkg-path = "docker"
+docker.pkg-group = "containers"
+
+docker-compose.pkg-path = "docker-compose"
+docker-compose.pkg-group = "containers"
+
+# Task runner
+just.pkg-path = "just"
+just.pkg-group = "build"
+
+# Utilities
+jq.pkg-path = "jq"
+jq.pkg-group = "utils"
+
+yq.pkg-path = "yq-go"
+yq.pkg-group = "utils"
+
+git.pkg-path = "git"
+git.pkg-group = "utils"
+
+curl.pkg-path = "curl"
+curl.pkg-group = "utils"
+
+# Optional: hot-reload for development
+air.pkg-path = "air"
+air.pkg-group = "dev"
+
+[vars]
+# Project metadata
+PROJECT_NAME = "external-dns-nextdns-webhook"
+VERSION = "dev"
+BINARY_NAME = "webhook"
+
+# Go environment
+GO111MODULE = "on"
+CGO_ENABLED = "0"
+
+# Default log level
+LOG_LEVEL = "info"
+
+# Docker image name
+DOCKER_IMAGE = "external-dns-nextdns-webhook"
+
+# Kind cluster name
+KIND_CLUSTER_NAME = "external-dns-dev"
+
+[hook]
+on-activate = '''
+echo "🚀 Activating external-dns-nextdns-webhook development environment"
+echo ""
+
+# Set up Go cache within Flox environment for isolation
+export GOENV="$FLOX_ENV_CACHE/goenv"
+export GOCACHE="$FLOX_ENV_CACHE/go-build"
+export GOMODCACHE="$FLOX_ENV_CACHE/go/pkg/mod"
+
+# Ensure Go directories exist
+mkdir -p "$GOENV" "$GOCACHE" "$GOMODCACHE"
+
+# Download Go dependencies if go.mod exists
+if [ -f go.mod ]; then
+  echo "📦 Downloading Go dependencies..."
+  go mod download
+fi
+
+# Check if Docker daemon is running
+if ! docker info > /dev/null 2>&1; then
+  echo "⚠️  Warning: Docker daemon is not running"
+  echo "   Please start Docker to use kind and container commands"
+  echo ""
+fi
+
+# Display environment info
+echo "✅ Environment ready!"
+echo ""
+echo "Go version: $(go version | cut -d' ' -f3)"
+echo "Kind version: $(kind version 2>/dev/null | head -n1 || echo 'N/A')"
+echo "Kubectl version: $(kubectl version --client --short 2>/dev/null || echo 'N/A')"
+echo ""
+echo "Available commands (run 'just' to see all):"
+echo "  just build       - Build the webhook binary"
+echo "  just test        - Run tests"
+echo "  just kind-up     - Start kind cluster"
+echo "  just kind-down   - Stop kind cluster"
+echo ""
+echo "To start services: flox services start"
+echo "To see service logs: flox services logs kind"
+'''
+
+[services.kind]
+command = """
+# Check if cluster already exists
+if kind get clusters 2>/dev/null | grep -q "^${KIND_CLUSTER_NAME}$"; then
+  echo "Kind cluster '${KIND_CLUSTER_NAME}' already exists, skipping creation"
+  exit 0
+fi
+
+# Create kind cluster with custom configuration
+cat <<EOF | kind create cluster --name ${KIND_CLUSTER_NAME} --config=-
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+  - role: control-plane
+    extraPortMappings:
+      - containerPort: 8080
+        hostPort: 8080
+        protocol: TCP
+      - containerPort: 8888
+        hostPort: 8888
+        protocol: TCP
+networking:
+  apiServerAddress: "127.0.0.1"
+  apiServerPort: 6443
+EOF
+
+# Wait for cluster to be ready
+echo "Waiting for cluster to be ready..."
+kubectl wait --for=condition=Ready nodes --all --timeout=60s
+
+echo "✅ Kind cluster '${KIND_CLUSTER_NAME}' is ready!"
+"""
+
+# Services that fork to background need this
+is-daemon = true
+
+[services.kind.shutdown]
+command = "kind delete cluster --name ${KIND_CLUSTER_NAME}"
+
+[profile]
+# Optional: Define different profiles for different scenarios
+# Users can activate with: flox activate -r profile-name
+
+[profile.common]
+# Common packages for all profiles (already defined in [install])
+
+[profile.ci]
+# Minimal profile for CI/CD environments
+# Could exclude dev tools, air, etc.
