@@ -117,9 +117,9 @@ func (p *Provider) AdjustEndpoints(endpoints []*endpoint.Endpoint) ([]*endpoint.
 }
 
 // GetDomainFilter returns the domain filter for this provider
-func (p *Provider) GetDomainFilter() endpoint.DomainFilter {
+func (p *Provider) GetDomainFilter() endpoint.DomainFilterInterface {
 	if len(p.config.DomainFilter) == 0 {
-		return endpoint.DomainFilter{}
+		return endpoint.NewDomainFilter([]string{})
 	}
 	return endpoint.NewDomainFilter(p.config.DomainFilter)
 }

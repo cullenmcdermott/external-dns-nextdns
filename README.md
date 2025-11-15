@@ -4,7 +4,7 @@ A webhook provider for [external-dns](https://github.com/kubernetes-sigs/externa
 
 ## Status
 
-⚠️ **UNDER DEVELOPMENT** - This provider is currently in the scaffolding phase. See [IMPLEMENTATION_PLAN.md](./IMPLEMENTATION_PLAN.md) for the roadmap.
+✅ **NO-OP PROVIDER READY** - The service structure is complete and deployable. Currently implements a no-op provider (logs operations without making actual API calls). See [IMPLEMENTATION_PLAN.md](./IMPLEMENTATION_PLAN.md) for the roadmap to full implementation.
 
 ## Features
 
@@ -88,10 +88,42 @@ docker run -d \
 
 ### Kubernetes (Sidecar Pattern)
 
-```yaml
-# TODO: Add Kubernetes manifests in implementation phase
-# See IMPLEMENTATION_PLAN.md for details
+The recommended way to deploy is using the sidecar pattern with external-dns:
+
+```bash
+# 1. Create the namespace
+kubectl apply -f deploy/kubernetes/namespace.yaml
+
+# 2. Create your secret with NextDNS credentials
+cp deploy/kubernetes/secret.yaml.example deploy/kubernetes/secret.yaml
+# Edit secret.yaml with your actual credentials
+kubectl apply -f deploy/kubernetes/secret.yaml
+
+# 3. Deploy RBAC and other resources
+kubectl apply -f deploy/kubernetes/serviceaccount.yaml
+kubectl apply -f deploy/kubernetes/clusterrole.yaml
+kubectl apply -f deploy/kubernetes/clusterrolebinding.yaml
+kubectl apply -f deploy/kubernetes/configmap.yaml
+kubectl apply -f deploy/kubernetes/service.yaml
+
+# 4. Deploy the webhook + external-dns
+kubectl apply -f deploy/kubernetes/deployment.yaml
+
+# 5. Verify it's running
+kubectl get pods -n external-dns
+kubectl logs -n external-dns -l app.kubernetes.io/name=external-dns -c nextdns-webhook
 ```
+
+Or using Kustomize:
+
+```bash
+cd deploy/kubernetes
+cp secret.yaml.example secret.yaml
+# Edit secret.yaml with your credentials
+kubectl apply -k .
+```
+
+See [deploy/kubernetes/README.md](./deploy/kubernetes/README.md) for detailed deployment instructions and troubleshooting.
 
 ## How It Works
 

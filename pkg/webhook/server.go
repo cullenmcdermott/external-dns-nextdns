@@ -43,22 +43,20 @@ func NewServer(config *nextdns.Config, provider provider.Provider) (*Server, err
 // Start starts the webhook server
 func (s *Server) Start(ctx context.Context) error {
 	// Create the webhook API handler using external-dns webhook API
+	webhookServer := &api.WebhookServer{
+		Provider: s.provider,
+	}
+
 	mux := http.NewServeMux()
 
-	// This will automatically set up the required endpoints:
-	// GET / - Domain filter
+	// Setup webhook endpoints as per external-dns specification:
+	// GET / - Negotiate/Domain filter
 	// GET /records - Get records
 	// POST /records - Apply changes
 	// POST /adjustendpoints - Adjust endpoints
-	apiHandler, err := api.NewHandler(
-		s.provider,
-		api.WithHandlerLogging(log.StandardLogger()),
-	)
-	if err != nil {
-		return fmt.Errorf("failed to create API handler: %w", err)
-	}
-
-	mux.Handle("/", apiHandler)
+	mux.HandleFunc("/", webhookServer.NegotiateHandler)
+	mux.HandleFunc("/records", webhookServer.RecordsHandler)
+	mux.HandleFunc("/adjustendpoints", webhookServer.AdjustEndpointsHandler)
 
 	// Setup API server (webhook endpoints)
 	s.apiServer = &http.Server{
