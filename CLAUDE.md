@@ -8,7 +8,7 @@
 
 This is a NextDNS webhook provider for external-dns that enables Kubernetes-native DNS management using NextDNS's DNS Rewrites API.
 
-**Status**: Under active development - currently in scaffolding phase
+**Status**: Under active development - scaffolding complete, ready for API integration
 
 ---
 
@@ -173,6 +173,32 @@ if err != nil {
 }
 ```
 
+### Established Code Patterns
+
+**Configuration Loading** (`internal/nextdns/config.go`):
+- Use helper functions: `getEnv()`, `getEnvInt()`, `getEnvBool()`, `getEnvList()`
+- Validate required fields in `LoadConfig()`
+- Return descriptive errors
+
+**Provider Methods** (`internal/nextdns/provider.go`):
+- Use structured logging with `log.WithFields()`
+- Check `config.DryRun` before making changes
+- Return wrapped errors with context
+- Private helper methods use lowercase names (`createRecord`, `updateRecord`, `deleteRecord`)
+
+**HTTP Server** (`pkg/webhook/server.go`):
+- Separate servers for API (localhost) and health checks (public)
+- Use external-dns provided handler: `api.NewHandler()`
+- Implement graceful shutdown
+- Use constants for timeouts and media types
+
+**Main Entry Point** (`cmd/webhook/main.go`):
+- Display version banner
+- Load and validate config early
+- Setup logging before any operations
+- Handle signals for graceful shutdown
+- Exit with clear error messages on failure
+
 ### Testing Philosophy
 
 - Unit tests for business logic
@@ -208,30 +234,69 @@ if err != nil {
 
 ## 📖 Context for Future Sessions
 
-### Current Status (Updated: 2025-11-11)
+### Current Status (Updated: 2025-11-15)
 
 **Phase**: Scaffolding ✅ COMPLETE
 **Next Phase**: API Integration (Phase 2)
+**Current Branch**: `claude/claude-md-mi0lc1gamjb16ctl-01PHiWAmEzqLmdXNhw7MWXHq`
 
 **What's Done**:
-- ✅ Project structure created
-- ✅ Go module initialized
-- ✅ Configuration management implemented
-- ✅ Provider skeleton created
-- ✅ HTTP server skeleton created
+- ✅ Project structure created (`cmd/`, `internal/`, `pkg/`)
+- ✅ Go module initialized (`go.mod` with Go 1.24.7)
+- ✅ Configuration management implemented (`internal/nextdns/config.go`)
+  - Environment variable parsing with defaults
+  - Validation for required fields (API_KEY, PROFILE_ID)
+  - Support for all config options (ports, dry-run, overwrite protection, etc.)
+- ✅ Provider skeleton created (`internal/nextdns/provider.go`)
+  - Implements `provider.Provider` interface from external-dns
+  - `Records()` method (returns empty array for now)
+  - `ApplyChanges()` with routing to create/update/delete methods
+  - `AdjustEndpoints()` with record type and domain filtering
+  - `GetDomainFilter()` implementation
+  - Dry-run mode with comprehensive logging
+  - Structured logging with logrus
+- ✅ HTTP server skeleton created (`pkg/webhook/server.go`)
+  - Webhook API server on port 8888 (localhost only for security)
+  - Health check server on port 8080 (exposed for Kubernetes probes)
+  - Uses `sigs.k8s.io/external-dns/provider/webhook/api` handler
+  - Graceful shutdown support
+  - Health endpoints: `/healthz` and `/readyz`
+- ✅ Entry point created (`cmd/webhook/main.go`)
+  - Signal handling (SIGINT, SIGTERM)
+  - Configuration loading with validation
+  - Log level configuration
+  - Version banner
 - ✅ Dockerfile created
-- ✅ Documentation created
+  - Multi-stage build (builder + final)
+  - Non-root user (webhook:webhook, UID 1000)
+  - Health checks configured
+  - Minimal Alpine-based final image
+- ✅ Makefile created with development targets (build, run, test, docker-build, etc.)
+- ✅ Documentation created (README.md, IMPLEMENTATION_PLAN.md, CLAUDE.md)
+- ✅ Example environment file (.env.example)
+- ✅ .gitignore configured
+
+**Important Implementation Details**:
+- Module path: `github.com/cullenmcdermott/external-dns-nextdns-webhook`
+- Server ports: API on 127.0.0.1:8888, Health on 0.0.0.0:8080
+- Default record types: A, AAAA, CNAME
+- Overwrite protection: Disabled by default (ALLOW_OVERWRITE=false)
+- Dry-run mode: Available for safe testing (DRY_RUN=true)
 
 **What's Next** (Recommended for next session):
-- ⏳ Add NextDNS Go SDK dependency
-- ⏳ Create NextDNS client wrapper
+- ⏳ Add NextDNS Go SDK dependency (`github.com/amalucelli/nextdns-go`)
+- ⏳ Add external-dns dependencies to go.mod
+- ⏳ Run `go mod tidy` to populate go.sum
+- ⏳ Create NextDNS client wrapper (`internal/nextdns/client.go`)
 - ⏳ Implement Records() method (GET /records)
+- ⏳ Implement createRecord() with overwrite protection logic
 
 **Blockers**: None
 
 **Open Questions**:
 - Do we need to handle NextDNS API rate limits? (investigate in Phase 2)
 - Does NextDNS support custom TTL? (check during implementation)
+- What's the pagination strategy for NextDNS Rewrites API? (test during implementation)
 
 ---
 
@@ -250,15 +315,18 @@ if err != nil {
 
 ### Session Checklist
 
-- [ ] Read CLAUDE.md
-- [ ] Read IMPLEMENTATION_PLAN.md
-- [ ] Understand current phase
-- [ ] Identify task to work on
-- [ ] Implement changes
-- [ ] Update IMPLEMENTATION_PLAN.md
-- [ ] Update README.md (if user-facing)
-- [ ] Test changes
-- [ ] Commit with descriptive message
+- [ ] Read CLAUDE.md (this file)
+- [ ] Read IMPLEMENTATION_PLAN.md to understand current state
+- [ ] Check current git branch (should be `claude/...`)
+- [ ] Understand current phase (Phase 2: API Integration is next)
+- [ ] Identify task to work on (consult IMPLEMENTATION_PLAN.md)
+- [ ] Implement changes following existing patterns
+- [ ] Run `make check` to format and vet code
+- [ ] Update IMPLEMENTATION_PLAN.md with progress
+- [ ] Update README.md if user-facing changes
+- [ ] Test changes (at minimum with dry-run mode)
+- [ ] Commit with conventional commit message
+- [ ] Push to remote branch if session is complete
 
 ---
 
@@ -352,7 +420,46 @@ Good examples to learn from:
 
 ## 🚀 Quick Reference Commands
 
-### Development
+### Using the Makefile (Recommended)
+
+```bash
+# Show all available targets
+make help
+
+# Build the binary
+make build
+
+# Run locally (requires NEXTDNS_API_KEY and NEXTDNS_PROFILE_ID env vars)
+export NEXTDNS_API_KEY="your-key"
+export NEXTDNS_PROFILE_ID="your-profile"
+make run
+
+# Run tests
+make test
+
+# Run tests with coverage report
+make test-coverage
+
+# Format and vet code
+make check
+
+# Build Docker image
+make docker-build
+
+# Run in Docker (with dry-run enabled)
+make docker-run
+
+# Download dependencies
+make deps
+
+# Tidy dependencies
+make tidy
+
+# Clean build artifacts
+make clean
+```
+
+### Development Commands (Manual)
 
 ```bash
 # Build
@@ -366,11 +473,17 @@ export NEXTDNS_PROFILE_ID="test"
 # Test
 go test ./...
 
-# Lint (when setup)
+# Format code
+go fmt ./...
+
+# Vet code
+go vet ./...
+
+# Lint (requires golangci-lint)
 golangci-lint run
 ```
 
-### Docker
+### Docker Commands
 
 ```bash
 # Build
@@ -378,6 +491,79 @@ docker build -t external-dns-nextdns-webhook:dev .
 
 # Run
 docker run -e NEXTDNS_API_KEY=xxx -e NEXTDNS_PROFILE_ID=yyy external-dns-nextdns-webhook:dev
+
+# Run with dry-run and custom log level
+docker run \
+  -e NEXTDNS_API_KEY=xxx \
+  -e NEXTDNS_PROFILE_ID=yyy \
+  -e DRY_RUN=true \
+  -e LOG_LEVEL=debug \
+  -p 8080:8080 \
+  external-dns-nextdns-webhook:dev
+```
+
+---
+
+## 🔄 Git Workflow
+
+### Branch Management
+
+**CRITICAL**: This project uses a specific git workflow with protected branches.
+
+**Current Development Branch**: `claude/claude-md-mi0lc1gamjb16ctl-01PHiWAmEzqLmdXNhw7MWXHq`
+
+**Branch Naming Convention**:
+- Must start with `claude/`
+- Must end with the session ID
+- Pattern: `claude/<description>-<session-id>`
+
+**Git Push Requirements**:
+- ALWAYS use: `git push -u origin <branch-name>`
+- Branch name MUST match the pattern above, or push will fail with 403
+- Network failures: Retry up to 4 times with exponential backoff (2s, 4s, 8s, 16s)
+
+**Git Fetch/Pull**:
+- Prefer specific branches: `git fetch origin <branch-name>`
+- For pulls: `git pull origin <branch-name>`
+- Network failures: Retry up to 4 times with exponential backoff
+
+### Commit Message Guidelines
+
+Use conventional commits format:
+```
+feat: add Records() implementation for NextDNS API
+fix: correct domain filter matching logic
+docs: update IMPLEMENTATION_PLAN.md with Phase 2 progress
+test: add unit tests for configuration loading
+refactor: extract NextDNS client to separate file
+chore: update dependencies to latest versions
+```
+
+### When to Commit
+
+- After completing a logical unit of work
+- After implementing a feature from IMPLEMENTATION_PLAN.md
+- After fixing a bug
+- After updating documentation
+- Before switching to a different task
+
+### Example Git Workflow
+
+```bash
+# Check current branch
+git branch
+
+# Check status
+git status
+
+# Stage changes
+git add .
+
+# Commit with conventional message
+git commit -m "feat: implement NextDNS client wrapper"
+
+# Push to remote (with retry logic if needed)
+git push -u origin claude/claude-md-mi0lc1gamjb16ctl-01PHiWAmEzqLmdXNhw7MWXHq
 ```
 
 ---
@@ -385,6 +571,7 @@ docker run -e NEXTDNS_API_KEY=xxx -e NEXTDNS_PROFILE_ID=yyy external-dns-nextdns
 ## 🔄 Version History of This File
 
 - **v1.0** (2025-11-11): Initial creation after scaffolding phase
+- **v1.1** (2025-11-15): Updated with detailed implementation status, git workflow, and Makefile commands
 
 ---
 
