@@ -62,7 +62,36 @@ The provider is configured via environment variables:
 
 ## Installation
 
-### Quick Start (Development)
+### Quick Start (Development with Flox)
+
+**Recommended**: Use Flox for a fully reproducible development environment:
+
+```bash
+# Install Flox (if not already installed)
+# See: https://flox.dev/docs
+
+# Activate the development environment
+flox activate
+
+# This automatically:
+# - Installs Go 1.23, kind, kubectl, docker, just, and dev tools
+# - Sets up environment variables
+# - Downloads Go dependencies
+# - Creates isolated Go cache
+
+# Set your NextDNS credentials
+export NEXTDNS_API_KEY="your-api-key"
+export NEXTDNS_PROFILE_ID="your-profile-id"
+
+# Build and run using Just
+just build
+just run
+
+# Or run with hot-reload
+just dev
+```
+
+### Quick Start (Manual Development)
 
 ```bash
 # Set environment variables
@@ -125,6 +154,73 @@ NextDNS Rewrites API supports:
 
 See [CLAUDE.md](./CLAUDE.md) for important notes about working on this codebase.
 
+### Development Environment Setup
+
+This project uses **Flox** for reproducible development environments and **Just** for task automation.
+
+#### Using Flox (Recommended)
+
+```bash
+# Activate the Flox environment
+flox activate
+
+# Start services (e.g., kind cluster for testing)
+flox services start
+
+# Check service status
+flox services status
+
+# View logs
+flox services logs kind
+```
+
+The Flox environment includes:
+- Go 1.23 toolchain
+- Kubernetes tools (kind, kubectl, helm)
+- Container tools (docker, docker-compose)
+- Development tools (golangci-lint, delve debugger, air for hot-reload)
+- Task runner (just)
+- Utilities (jq, yq, git, curl)
+
+#### Available Just Commands
+
+```bash
+# Show all commands
+just
+
+# Build commands
+just build              # Build the webhook binary
+just build-linux        # Build for Linux AMD64
+just clean              # Clean build artifacts
+
+# Development commands
+just run                # Run the webhook locally
+just dev                # Run with hot-reload
+just fmt                # Format code
+just lint               # Run linter
+just check              # Run all checks (fmt, vet, lint)
+
+# Testing commands
+just test               # Run tests
+just test-coverage      # Run tests with coverage
+just test-race          # Run tests with race detector
+
+# Docker commands
+just docker-build       # Build Docker image
+just docker-run         # Run Docker container
+
+# Kubernetes commands
+just kind-up            # Create kind cluster
+just kind-down          # Delete kind cluster
+just kind-status        # Show cluster status
+just k8s-deploy         # Deploy to kind
+just k8s-logs           # View webhook logs
+
+# Utility commands
+just env-example        # Print example env vars
+just version            # Show version info
+```
+
 ### Project Structure
 
 ```
@@ -139,6 +235,10 @@ See [CLAUDE.md](./CLAUDE.md) for important notes about working on this codebase.
 ├── pkg/
 │   └── webhook/          # HTTP server implementation
 │       └── server.go
+├── .flox/
+│   └── env/
+│       └── manifest.toml # Flox environment definition
+├── justfile              # Task automation commands
 ├── IMPLEMENTATION_PLAN.md  # Detailed implementation roadmap
 ├── CLAUDE.md              # Instructions for AI assistants
 └── README.md              # This file
@@ -147,13 +247,24 @@ See [CLAUDE.md](./CLAUDE.md) for important notes about working on this codebase.
 ### Building
 
 ```bash
+# With Just
+just build
+
+# Or manually
 go build -o webhook ./cmd/webhook
 ```
 
 ### Testing
 
 ```bash
+# With Just
+just test
+
+# Or manually
 go test ./...
+
+# With coverage
+just test-coverage
 ```
 
 ## Contributing
