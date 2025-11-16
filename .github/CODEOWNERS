@@ -1,0 +1,19 @@
+# Code owners for external-dns-nextdns-webhook
+# These users will be automatically requested for review when someone opens a pull request
+
+# Global owners
+* @cullenmcdermott
+
+# Core provider logic
+/internal/nextdns/ @cullenmcdermott
+
+# Kubernetes manifests
+/deploy/ @cullenmcdermott
+
+# CI/CD workflows
+/.github/ @cullenmcdermott
+
+# Documentation
+*.md @cullenmcdermott
+/IMPLEMENTATION_PLAN.md @cullenmcdermott
+/CLAUDE.md @cullenmcdermott
