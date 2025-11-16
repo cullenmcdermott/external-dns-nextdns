@@ -19,19 +19,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version-file: 'go.mod'
-          cache: true
-
-      - name: Install Just
-        uses: extractions/setup-just@v2
-        with:
-          just-version: '1.25.2'
+      - name: Install Flox
+        uses: flox/activate-flox@v1
 
       - name: Run code quality checks
-        run: just check
+        run: flox activate -- just check
 
   # Test with coverage
   test:
@@ -41,22 +33,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version-file: 'go.mod'
-          cache: true
-
-      - name: Install Just
-        uses: extractions/setup-just@v2
-        with:
-          just-version: '1.25.2'
+      - name: Install Flox
+        uses: flox/activate-flox@v1
 
       - name: Download dependencies
-        run: just deps
+        run: flox activate -- just deps
 
       - name: Run tests with coverage
-        run: just test-coverage
+        run: flox activate -- just test-coverage
 
       - name: Upload coverage to artifacts
         uses: actions/upload-artifact@v4
@@ -104,21 +88,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version-file: 'go.mod'
-          cache: true
-
-      - name: Install Just
-        uses: extractions/setup-just@v2
-        with:
-          just-version: '1.25.2'
+      - name: Install Flox
+        uses: flox/activate-flox@v1
 
       - name: Build binary
         env:
           VERSION: ci-${{ github.sha }}
-        run: just build
+        run: flox activate -- just build
 
       - name: Verify binary
         run: |
@@ -134,10 +110,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install Just
-        uses: extractions/setup-just@v2
-        with:
-          just-version: '1.25.2'
+      - name: Install Flox
+        uses: flox/activate-flox@v1
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -145,7 +119,7 @@ jobs:
       - name: Build Docker image
         env:
           VERSION: ci
-        run: just docker-build
+        run: flox activate -- just docker-build
 
   # Security scanning
   security:
