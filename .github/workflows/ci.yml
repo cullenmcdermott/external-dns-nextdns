@@ -98,10 +98,8 @@ jobs:
 
       - name: Build binary
         uses: flox/activate-action@v1
-        env:
-          VERSION: ci-${{ github.sha }}
         with:
-          command: just build
+          command: VERSION=ci-${{ github.sha }} just build
 
       - name: Verify binary
         run: |
@@ -125,10 +123,8 @@ jobs:
 
       - name: Build Docker image
         uses: flox/activate-action@v1
-        env:
-          VERSION: ci
         with:
-          command: just docker-build
+          command: VERSION=ci just docker-build
 
   # Security scanning
   security:
