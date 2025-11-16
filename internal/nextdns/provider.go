@@ -15,8 +15,7 @@ import (
 type Provider struct {
 	provider.BaseProvider
 	config *Config
-	// client will be added in implementation phase
-	// client *nextdns.Client
+	client *Client
 }
 
 // NewProvider creates a new NextDNS provider
@@ -25,8 +24,15 @@ func NewProvider(config *Config) (*Provider, error) {
 		return nil, fmt.Errorf("config cannot be nil")
 	}
 
+	// Create NextDNS API client
+	client, err := NewClient(config.APIKey, config.ProfileID, config.BaseURL)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create NextDNS client: %w", err)
+	}
+
 	p := &Provider{
 		config: config,
+		client: client,
 	}
 
 	log.WithFields(log.Fields{
@@ -34,6 +40,16 @@ func NewProvider(config *Config) (*Provider, error) {
 		"base_url":   config.BaseURL,
 		"dry_run":    config.DryRun,
 	}).Info("NextDNS provider initialized")
+
+	// Test connection if not in dry-run mode
+	if !config.DryRun {
+		ctx := context.Background()
+		if err := client.TestConnection(ctx); err != nil {
+			log.WithError(err).Warn("Failed to connect to NextDNS API - provider will continue but may fail on actual operations")
+			// Don't return error here - allow provider to start even if connection test fails
+			// This is useful for scenarios where API might be temporarily unavailable
+		}
+	}
 
 	return p, nil
 }
