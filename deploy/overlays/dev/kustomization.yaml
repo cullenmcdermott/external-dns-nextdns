@@ -6,6 +6,15 @@ kind: Kustomization
 
 resources:
   - ../../kubernetes
+  - ../../kubernetes/example-ingress.yaml
+
+# Override ConfigMap for development
+configMapGenerator:
+  - name: nextdns-webhook-config
+    behavior: merge
+    literals:
+      - DRY_RUN=false       # Enable real DNS record creation for dev testing
+      - LOG_LEVEL=debug     # Verbose logging for development
 
 patches:
   # Disable read-only filesystem for nextdns-webhook container to allow Tilt live updates
