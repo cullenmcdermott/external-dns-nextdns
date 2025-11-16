@@ -89,15 +89,15 @@ This document outlines the complete implementation plan for the NextDNS webhook 
 - [x] Run `go mod tidy`
 - [x] Test that dependencies resolve
 
-#### 2.2 NextDNS Client Setup
+#### 2.2 NextDNS Client Setup ✅ COMPLETE
 
 **File**: `internal/nextdns/client.go` (NEW)
 
-- [ ] Create NextDNS client wrapper
-- [ ] Initialize client with API key and profile ID
-- [ ] Add connection testing method
-- [ ] Add error handling for API failures
-- [ ] Update provider.go to use client
+- [x] Create NextDNS client wrapper
+- [x] Initialize client with API key and profile ID
+- [x] Add connection testing method
+- [x] Add error handling for API failures
+- [x] Update provider.go to use client
 
 #### 2.3 Records Fetching (GET /records)
 
@@ -381,13 +381,13 @@ This document outlines the complete implementation plan for the NextDNS webhook 
 
 - [x] Phase 1: Scaffolding (100%)
 - [x] Phase 1.5: No-Op Provider (100%)
-- [ ] Phase 2: API Integration (15% - Dependencies added)
+- [ ] Phase 2: API Integration (30% - Dependencies added, Client wrapper complete)
 - [ ] Phase 3: Testing (0%)
 - [x] Phase 4: Kubernetes Integration (75% - Basic manifests complete, Helm pending)
 - [ ] Phase 5: Advanced Features (0%)
 - [ ] Phase 6: Documentation & Release (0%)
 
-**Overall**: 40% Complete (Structure & Deployment Ready)
+**Overall**: 42% Complete (Client Wrapper Ready)
 
 ### Current Sprint Focus
 
@@ -400,10 +400,9 @@ This document outlines the complete implementation plan for the NextDNS webhook 
 - Service structure validation
 - **Deliverable**: Deployable no-op provider for testing service integration
 
-**Sprint 2**: ⏳ Next (Recommended for next session)
-- Phase 2.2-2.6: NextDNS API integration
-- Implement actual NextDNS client wrapper
-- Convert no-op methods to real implementations
+**Sprint 2**: ⏳ In Progress
+- Phase 2.2: ✅ Complete - NextDNS client wrapper created
+- Phase 2.3-2.6: Next steps - Convert no-op methods to real implementations
 - Implement Records(), createRecord(), updateRecord(), deleteRecord()
 
 ---
@@ -508,6 +507,24 @@ This document outlines the complete implementation plan for the NextDNS webhook 
 - ConfigMap pattern useful for environment-based configuration
 - Health checks on separate port (8080) from API (8888) for security
 - Using kustomize makes deployment flexible and reusable
+
+### Session 3 (2025-11-16): NextDNS Client Wrapper (Phase 2.2)
+- Added nextdns-go v0.5.0 dependency to go.mod
+- Created `internal/nextdns/client.go` with NextDNS API wrapper
+- Implemented client initialization with API key and profile ID
+- Added connection testing via `TestConnection()` method
+- Client wrapper provides high-level methods:
+  - `ListRewrites()` - Fetch all DNS rewrites
+  - `CreateRewrite()` - Create new DNS record
+  - `DeleteRewrite()` - Delete DNS record by ID
+  - `FindRewriteByName()` - Search for existing record
+  - `UpdateRewrite()` - Update record (delete + create pattern)
+- NextDNS Rewrites structure: ID, Name, Type, Content
+- Supported record types confirmed: A, AAAA, CNAME
+- NextDNS API doesn't have native update - using delete + create pattern
+- Error handling wraps all API errors with context
+- Provider now initializes client and tests connection (if not dry-run)
+- All code compiles successfully with new dependencies
 
 ---
 
