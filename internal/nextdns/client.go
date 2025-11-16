@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/amalucelli/nextdns-go/nextdns"
+	log "github.com/sirupsen/logrus"
 )
 
 // Client wraps the NextDNS API client and provides DNS record management
