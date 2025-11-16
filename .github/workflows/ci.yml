@@ -25,7 +25,7 @@ jobs:
       - name: Run code quality checks
         uses: flox/activate-action@v1
         with:
-          command: env -u LD_LIBRARY_PATH just check
+          command: just check
 
   # Test with coverage
   test:
@@ -41,12 +41,12 @@ jobs:
       - name: Download dependencies
         uses: flox/activate-action@v1
         with:
-          command: env -u LD_LIBRARY_PATH just deps
+          command: just deps
 
       - name: Run tests with coverage
         uses: flox/activate-action@v1
         with:
-          command: env -u LD_LIBRARY_PATH just test-coverage
+          command: just test-coverage
 
       - name: Upload coverage to artifacts
         uses: actions/upload-artifact@v4
@@ -61,7 +61,7 @@ jobs:
         uses: flox/activate-action@v1
         with:
           command: |
-            env -u LD_LIBRARY_PATH bash -c '
+            bash -c '
               COVERAGE=$(go tool cover -func=coverage.out | grep total | awk "{print \$3}" | sed "s/%//")
               echo "percentage=$COVERAGE" >> $GITHUB_OUTPUT
               echo "Total coverage: $COVERAGE%"
@@ -104,7 +104,7 @@ jobs:
       - name: Build binary
         uses: flox/activate-action@v1
         with:
-          command: env -u LD_LIBRARY_PATH VERSION=ci-${{ github.sha }} just build
+          command: VERSION=ci-${{ github.sha }} just build
 
       - name: Verify binary
         run: |
@@ -126,7 +126,7 @@ jobs:
       - name: Build Docker image
         uses: flox/activate-action@v1
         with:
-          command: env -u LD_LIBRARY_PATH VERSION=ci just docker-build
+          command: VERSION=ci just docker-build
 
   # Security scanning
   security:
@@ -142,7 +142,7 @@ jobs:
       - name: Run Trivy vulnerability scanner
         uses: flox/activate-action@v1
         with:
-          command: env -u LD_LIBRARY_PATH trivy fs --format table --exit-code 0 .
+          command: trivy fs --format table --exit-code 0 .
 
   # Summary job
   ci-success:
