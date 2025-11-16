@@ -45,8 +45,13 @@ jobs:
           go-version-file: 'go.mod'
           cache: true
 
+      - name: Install Just
+        uses: extractions/setup-just@v2
+        with:
+          just-version: '1.25.2'
+
       - name: Run tests
-        run: go test -v -race ./...
+        run: just test
 
       - name: Build binaries
         run: |

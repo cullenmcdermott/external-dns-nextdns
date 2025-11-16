@@ -348,14 +348,14 @@ This document outlines the complete implementation plan for the NextDNS webhook 
 
 **Files Created**:
 - `.github/workflows/ci.yml` - Main CI workflow
-  - Lint check with golangci-lint
-  - Format verification
-  - Tests on Go 1.22 and 1.23
-  - Coverage reporting with PR comments
-  - Build verification
-  - Docker build verification
+  - Code quality checks using `just check` (fmt, vet, lint)
+  - Tests on Go 1.22 and 1.23 using `just test-coverage`
+  - Coverage reporting with automated PR comments
+  - Build verification using `just build`
+  - Docker build using `just docker-build`
   - Trivy security scanning
 - `.github/workflows/release.yml` - Release automation
+  - Tests using `just test`
   - Multi-platform binary builds (linux/darwin, amd64/arm64)
   - Checksums generation
   - GitHub release creation
@@ -367,6 +367,7 @@ This document outlines the complete implementation plan for the NextDNS webhook 
   - Docker base image updates
 - `.github/pull_request_template.md` - PR template
 - `.github/CODEOWNERS` - Code ownership and review assignments
+- `.github/workflows/README.md` - Comprehensive workflow documentation
 
 **Features**:
 - ✅ Automated testing on every push/PR
@@ -376,6 +377,17 @@ This document outlines the complete implementation plan for the NextDNS webhook 
 - ✅ Multi-platform release builds
 - ✅ Docker image publishing to GHCR
 - ✅ Weekly dependency updates via Dependabot
+- ✅ **Consistent with local development** (uses Just task runner)
+- ✅ **Single source of truth** for commands (justfile)
+
+**Key Design Decision**:
+All GitHub Actions workflows use Just commands instead of raw Go commands to ensure consistency between local development and CI/CD. This means:
+- Developers and CI run identical commands (`just test`, `just build`, etc.)
+- Commands are defined once in `justfile` and used everywhere
+- Changes to build/test commands automatically apply to both local and CI
+- New contributors can discover all commands with `just --list`
+
+While Flox is used for local development environments, CI uses native GitHub Actions for speed and simplicity, with Just providing command consistency.
 
 #### 6.3 Release Preparation
 
