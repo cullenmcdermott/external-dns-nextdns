@@ -103,7 +103,7 @@ func TestHealthEndpoint(t *testing.T) {
 	server.handleHealth(w, req)
 
 	resp := w.Result()
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		t.Errorf("handleHealth() status = %v, want %v", resp.StatusCode, http.StatusOK)
@@ -140,7 +140,7 @@ func TestReadyEndpoint(t *testing.T) {
 	server.handleReady(w, req)
 
 	resp := w.Result()
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		t.Errorf("handleReady() status = %v, want %v", resp.StatusCode, http.StatusOK)
@@ -187,7 +187,7 @@ func TestServerShutdown(t *testing.T) {
 	if err != nil {
 		t.Logf("Health check failed (server might not be started yet): %v", err)
 	} else {
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 		if resp.StatusCode != http.StatusOK {
 			t.Errorf("Health check status = %v, want %v", resp.StatusCode, http.StatusOK)
 		}

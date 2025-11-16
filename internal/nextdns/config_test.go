@@ -111,7 +111,7 @@ func TestLoadConfig(t *testing.T) {
 
 			// Set test environment variables
 			for k, v := range tt.envVars {
-				os.Setenv(k, v)
+				_ = os.Setenv(k, v)
 			}
 
 			got, err := LoadConfig()
@@ -155,7 +155,7 @@ func TestGetEnv(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			os.Clearenv()
 			if tt.envValue != "" {
-				os.Setenv(tt.key, tt.envValue)
+				_ = os.Setenv(tt.key, tt.envValue)
 			}
 
 			got := getEnv(tt.key, tt.defaultValue)
@@ -201,7 +201,7 @@ func TestGetEnvInt(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			os.Clearenv()
 			if tt.envValue != "" {
-				os.Setenv(tt.key, tt.envValue)
+				_ = os.Setenv(tt.key, tt.envValue)
 			}
 
 			got := getEnvInt(tt.key, tt.defaultValue)
@@ -268,7 +268,7 @@ func TestGetEnvBool(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			os.Clearenv()
 			if tt.envValue != "" {
-				os.Setenv(tt.key, tt.envValue)
+				_ = os.Setenv(tt.key, tt.envValue)
 			}
 
 			got := getEnvBool(tt.key, tt.defaultValue)
@@ -321,7 +321,7 @@ func TestGetEnvList(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			os.Clearenv()
 			if tt.envValue != "" {
-				os.Setenv(tt.key, tt.envValue)
+				_ = os.Setenv(tt.key, tt.envValue)
 			}
 
 			got := getEnvList(tt.key, tt.defaultValue)

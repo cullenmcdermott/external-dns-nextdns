@@ -120,9 +120,9 @@ test-integration:
 # Run tests with coverage report
 test-coverage:
     @echo "🧪 Running tests with coverage..."
-    @LD_LIBRARY_PATH="" go test -v -race -coverprofile=coverage.out ./...
+    @go test -v -coverprofile=coverage.out ./...
     @echo "📊 Generating coverage report..."
-    @LD_LIBRARY_PATH="" go tool cover -html=coverage.out -o coverage.html
+    @go tool cover -html=coverage.out -o coverage.html
     @echo "✅ Coverage report generated: coverage.html"
 
 # ==========================================
