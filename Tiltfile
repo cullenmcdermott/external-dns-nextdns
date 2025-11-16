@@ -65,9 +65,10 @@ local_resource(
     # Ensure namespace exists first
     kubectl create namespace external-dns --dry-run=client -o yaml | kubectl apply -f - >/dev/null 2>&1
 
-    if command -v op >/dev/null 2>&1 && op whoami >/dev/null 2>&1; then
-      API_KEY=$(op read "op://Personal/NextDNS/api_key" 2>/dev/null)
-      PROFILE_ID=$(op read "op://Personal/NextDNS/profile_id" 2>/dev/null)
+    if command -v op >/dev/null 2>&1; then
+      # Try to read secrets directly - desktop app integration should handle auth
+      API_KEY=$(op read "op://Private/NextDNSAPI/api_key" 2>/dev/null)
+      PROFILE_ID=$(op read "op://Private/NextDNSAPI/profile_id" 2>/dev/null)
 
       if [ -n "$API_KEY" ] && [ -n "$PROFILE_ID" ]; then
         echo "✅ Using credentials from 1Password"
@@ -77,11 +78,18 @@ local_resource(
           --namespace=external-dns \
           --dry-run=client -o yaml | kubectl apply -f -
       else
-        echo "⚠️  Could not fetch from 1Password, using dev credentials"
+        echo ""
+        echo "⚠️  Could not fetch from 1Password"
+        echo "   Make sure:"
+        echo "   1. 1Password desktop app is running and unlocked"
+        echo "   2. You have a 'NextDNSAPI' item in your 'Private' vault with 'api_key' and 'profile_id' fields"
+        echo ""
+        echo "   Falling back to dev credentials for now..."
+        echo ""
         kubectl apply -f deploy/kubernetes/secret-dev.yaml
       fi
     else
-      echo "⚠️  1Password CLI not available, using dev credentials"
+      echo "⚠️  1Password CLI not installed, using dev credentials"
       kubectl apply -f deploy/kubernetes/secret-dev.yaml
     fi
     ''',

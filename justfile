@@ -18,6 +18,7 @@ help:
     @echo "Dev Environment (Flox + Tilt):"
     @echo "  just dev-start          Start development environment (Flox services)"
     @echo "  just dev-stop           Stop development environment and clean up"
+    @echo "  just dev-restart        Restart development environment"
     @echo "  just dev-logs           Tail Flox service logs"
     @echo "  just dev-status         Show Flox service status"
     @echo ""
@@ -55,6 +56,10 @@ dev-start:
 dev-stop:
     @echo "🛑 Stopping development environment..."
     flox services stop dev
+
+# Restart development environment
+dev-restart: dev-stop dev-start
+    @echo "♻️  Development environment restarted"
 
 # Tail Flox service logs
 dev-logs:
