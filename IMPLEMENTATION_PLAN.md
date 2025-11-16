@@ -349,7 +349,8 @@ This document outlines the complete implementation plan for the NextDNS webhook 
 **Files Created**:
 - `.github/workflows/ci.yml` - Main CI workflow
   - Code quality checks using `just check` (fmt, vet, lint)
-  - Tests on Go 1.22 and 1.23 using `just test-coverage`
+  - Tests with coverage using `just test-coverage`
+  - Uses Go version from go.mod (1.24.7, same as Flox environment)
   - Coverage reporting with automated PR comments
   - Build verification using `just build`
   - Docker build using `just docker-build`
@@ -372,7 +373,7 @@ This document outlines the complete implementation plan for the NextDNS webhook 
 **Features**:
 - ✅ Automated testing on every push/PR
 - ✅ Coverage reporting with PR comments
-- ✅ Multi-version Go testing (1.22, 1.23)
+- ✅ Uses same Go version as local development (1.24.7 from go.mod)
 - ✅ Automated security scanning with Trivy
 - ✅ Multi-platform release builds
 - ✅ Docker image publishing to GHCR

@@ -33,14 +33,10 @@ jobs:
       - name: Run code quality checks
         run: just check
 
-  # Test with multiple Go versions
+  # Test with coverage
   test:
-    name: Test (Go ${{ matrix.go-version }})
+    name: Test & Coverage
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        go-version: ['1.22', '1.23']
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -48,7 +44,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: ${{ matrix.go-version }}
+          go-version-file: 'go.mod'
           cache: true
 
       - name: Install Just
@@ -63,7 +59,6 @@ jobs:
         run: just test-coverage
 
       - name: Upload coverage to artifacts
-        if: matrix.go-version == '1.23'
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
@@ -72,7 +67,6 @@ jobs:
             coverage.html
 
       - name: Calculate coverage percentage
-        if: matrix.go-version == '1.23'
         id: coverage
         run: |
           COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//')
@@ -80,7 +74,7 @@ jobs:
           echo "Total coverage: $COVERAGE%"
 
       - name: Comment coverage on PR
-        if: matrix.go-version == '1.23' && github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request'
         uses: actions/github-script@v7
         with:
           script: |

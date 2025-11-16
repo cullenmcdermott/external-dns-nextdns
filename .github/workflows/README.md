@@ -10,7 +10,7 @@ Runs on every push to `main` or `claude/**` branches and on all pull requests.
 
 **Jobs:**
 - **check**: Runs code quality checks (fmt, vet, lint) using `just check`
-- **test**: Runs tests with coverage on Go 1.22 and 1.23 using `just test-coverage`
+- **test**: Runs tests with coverage using `just test-coverage`
 - **build**: Builds the binary using `just build`
 - **docker**: Builds Docker image using `just docker-build`
 - **security**: Runs Trivy security scanner
@@ -18,7 +18,7 @@ Runs on every push to `main` or `claude/**` branches and on all pull requests.
 
 **Features:**
 - ✅ Automated coverage reporting with PR comments
-- ✅ Multi-version Go testing (1.22, 1.23)
+- ✅ Uses Go version from go.mod (currently 1.24.7)
 - ✅ Security scanning with Trivy
 - ✅ Consistent with local development (uses Just)
 
