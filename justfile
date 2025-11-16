@@ -148,7 +148,8 @@ vet:
 # Run golangci-lint
 lint:
     @echo "🔍 Running golangci-lint..."
-    golangci-lint run
+    @# Workaround for Nix/Flox ld.so TLS error in CI environments
+    @LD_LIBRARY_PATH="" golangci-lint run
     @echo "✅ Lint complete"
 
 # ==========================================
