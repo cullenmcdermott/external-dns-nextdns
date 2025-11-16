@@ -9,25 +9,26 @@ import (
 	"time"
 
 	"github.com/cullenmcdermott/external-dns-nextdns-webhook/internal/nextdns"
+	"sigs.k8s.io/external-dns/endpoint"
 )
 
 // mockProvider implements the provider.Provider interface for testing
 type mockProvider struct{}
 
-func (m *mockProvider) Records(ctx context.Context) (interface{}, error) {
-	return []interface{}{}, nil
+func (m *mockProvider) Records(ctx context.Context) ([]*endpoint.Endpoint, error) {
+	return []*endpoint.Endpoint{}, nil
 }
 
-func (m *mockProvider) ApplyChanges(ctx context.Context, changes interface{}) error {
+func (m *mockProvider) ApplyChanges(ctx context.Context, changes *endpoint.Changes) error {
 	return nil
 }
 
-func (m *mockProvider) AdjustEndpoints(endpoints interface{}) (interface{}, error) {
+func (m *mockProvider) AdjustEndpoints(endpoints []*endpoint.Endpoint) ([]*endpoint.Endpoint, error) {
 	return endpoints, nil
 }
 
-func (m *mockProvider) GetDomainFilter() interface{} {
-	return nil
+func (m *mockProvider) GetDomainFilter() endpoint.DomainFilter {
+	return endpoint.DomainFilter{}
 }
 
 func TestNewServer(t *testing.T) {
@@ -43,7 +44,7 @@ func TestNewServer(t *testing.T) {
 	tests := []struct {
 		name     string
 		config   *nextdns.Config
-		provider interface{}
+		provider *mockProvider
 		wantErr  bool
 	}{
 		{
@@ -68,13 +69,7 @@ func TestNewServer(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Convert provider to the expected type for the function
-			var p interface{}
-			if tt.provider != nil {
-				p = tt.provider
-			}
-
-			got, err := NewServer(tt.config, p)
+			got, err := NewServer(tt.config, tt.provider)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewServer() error = %v, wantErr %v", err, tt.wantErr)
 				return

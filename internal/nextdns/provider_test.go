@@ -320,10 +320,8 @@ func TestGetDomainFilter(t *testing.T) {
 
 			got := provider.GetDomainFilter()
 			// The endpoint.DomainFilter doesn't export its internal filters,
-			// so we test by checking the type
-			if got == nil {
-				t.Error("GetDomainFilter() returned nil")
-			}
+			// so we just verify we got a DomainFilter struct back
+			_ = got // DomainFilter is a struct, not a pointer, so it can't be nil
 		})
 	}
 }
