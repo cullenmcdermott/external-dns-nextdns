@@ -18,7 +18,7 @@ Runs on every push to `main` or `claude/**` branches and on all pull requests.
 
 **Features:**
 - ✅ Automated coverage reporting with PR comments
-- ✅ Uses Go version from go.mod (currently 1.24.7)
+- ✅ Uses Go version from go.mod (1.25, matching Flox environment)
 - ✅ Security scanning with Trivy
 - ✅ Consistent with local development (uses Just)
 

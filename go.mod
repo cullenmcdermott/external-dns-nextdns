@@ -1,6 +1,6 @@
 module github.com/cullenmcdermott/external-dns-nextdns-webhook
 
-go 1.24.7
+go 1.25
 
 require (
 	github.com/amalucelli/nextdns-go v0.5.0
