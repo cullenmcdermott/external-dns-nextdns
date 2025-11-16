@@ -60,7 +60,10 @@ jobs:
         id: coverage
         uses: flox/activate-action@v1
         with:
-          command: bash -c "COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print \$3}' | sed 's/%//'); echo \"percentage=\$COVERAGE\" >> \$GITHUB_OUTPUT; echo \"Total coverage: \$COVERAGE%\""
+          command: |
+            COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//')
+            echo "percentage=$COVERAGE" >> $GITHUB_OUTPUT
+            echo "Total coverage: $COVERAGE%"
 
       - name: Comment coverage on PR
         if: github.event_name == 'pull_request'
