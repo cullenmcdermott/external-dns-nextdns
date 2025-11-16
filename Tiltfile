@@ -140,6 +140,16 @@ k8s_resource(
     labels=['app'],
 )
 
+# Example resources for testing external-dns
+k8s_resource(
+    objects=[
+        'example-app:ingress:default',
+        'example-loadbalancer:service:default',
+    ],
+    new_name='examples',
+    labels=['examples'],
+)
+
 # Watch for changes in Go files
 watch_file('go.mod')
 watch_file('go.sum')
