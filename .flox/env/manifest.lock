@@ -91,7 +91,7 @@
       "VERSION": "dev"
     },
     "hook": {
-      "on-activate": "setup_go_deps() {\n  local deps_flag=\"$FLOX_ENV_CACHE/.go_deps_installed\"\n  if [ ! -f \"$deps_flag\" ] && [ -f \"$FLOX_ENV_PROJECT/go.mod\" ]; then\n    go mod download && touch \"$deps_flag\"\n  fi\n}\n\nsetup_kubectl_context() {\n  # Set kubectl context to kind cluster if it exists\n  if kind get clusters 2>/dev/null | grep -q \"^${KIND_CLUSTER_NAME}$\"; then\n    kubectl config use-context \"${KIND_CLUSTER_NAME}\" >/dev/null 2>&1\n  fi\n}\n\n# Set up Go cache within Flox environment for isolation\nexport GOENV=\"${FLOX_ENV_CACHE:-/tmp}/goenv\"\nexport GOCACHE=\"${FLOX_ENV_CACHE:-/tmp}/go-build\"\nexport GOMODCACHE=\"${FLOX_ENV_CACHE:-/tmp}/go/pkg/mod\"\nmkdir -p \"$GOENV\" \"$GOCACHE\" \"$GOMODCACHE\"\n\n# Run setup functions\nsetup_go_deps\nsetup_kubectl_context\n\n# Return to project directory\ncd \"$FLOX_ENV_PROJECT\"\n"
+      "on-activate": "# Workaround for glibc TLS race condition (BZ #19329) in GitHub Actions\n# Flox's LD_AUDIT causes \"Inconsistency detected by ld.so: dl-tls.c\" errors\n# when Go toolchain dynamically loads libraries. Fixed in Flox v1.4.1 for some\n# programs, but still affects Go. See: https://github.com/flox/flox/issues/1341\nunset LD_AUDIT\n\nsetup_go_deps() {\n  local deps_flag=\"$FLOX_ENV_CACHE/.go_deps_installed\"\n  if [ ! -f \"$deps_flag\" ] && [ -f \"$FLOX_ENV_PROJECT/go.mod\" ]; then\n    go mod download && touch \"$deps_flag\"\n  fi\n}\n\nsetup_kubectl_context() {\n  # Set kubectl context to kind cluster if it exists\n  if kind get clusters 2>/dev/null | grep -q \"^${KIND_CLUSTER_NAME}$\"; then\n    kubectl config use-context \"${KIND_CLUSTER_NAME}\" >/dev/null 2>&1\n  fi\n}\n\n# Set up Go cache within Flox environment for isolation\nexport GOENV=\"${FLOX_ENV_CACHE:-/tmp}/goenv\"\nexport GOCACHE=\"${FLOX_ENV_CACHE:-/tmp}/go-build\"\nexport GOMODCACHE=\"${FLOX_ENV_CACHE:-/tmp}/go/pkg/mod\"\nmkdir -p \"$GOENV\" \"$GOCACHE\" \"$GOMODCACHE\"\n\n# Run setup functions\nsetup_go_deps\nsetup_kubectl_context\n\n# Return to project directory\ncd \"$FLOX_ENV_PROJECT\"\n"
     },
     "options": {},
     "services": {
@@ -1566,6 +1566,126 @@
       "priority": 5
     },
     {
+      "attr_path": "kustomize",
+      "broken": false,
+      "derivation": "/nix/store/afyxijldpppc5cs0llpa6ahcfqpviw05-kustomize-5.8.0.drv",
+      "description": "Customization of kubernetes YAML configurations",
+      "install_id": "kustomize",
+      "license": "Apache-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=c5ae371f1a6a7fd27823bc500d9390b38c05fa55",
+      "name": "kustomize-5.8.0",
+      "pname": "kustomize",
+      "rev": "c5ae371f1a6a7fd27823bc500d9390b38c05fa55",
+      "rev_count": 895122,
+      "rev_date": "2025-11-12T20:02:36Z",
+      "scrape_date": "2025-11-14T16:41:32.236943Z",
+      "stabilities": [
+        "staging",
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "5.8.0",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/9q6jak68g7h83xr6vynrxrl8k95hrvsf-kustomize-5.8.0"
+      },
+      "system": "aarch64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "kustomize",
+      "broken": false,
+      "derivation": "/nix/store/5ddfigwwl7gig0hs6kvllbx4r6ypiz1r-kustomize-5.8.0.drv",
+      "description": "Customization of kubernetes YAML configurations",
+      "install_id": "kustomize",
+      "license": "Apache-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=c5ae371f1a6a7fd27823bc500d9390b38c05fa55",
+      "name": "kustomize-5.8.0",
+      "pname": "kustomize",
+      "rev": "c5ae371f1a6a7fd27823bc500d9390b38c05fa55",
+      "rev_count": 895122,
+      "rev_date": "2025-11-12T20:02:36Z",
+      "scrape_date": "2025-11-14T17:18:48.668Z",
+      "stabilities": [
+        "staging",
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "5.8.0",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/v80g1f7l40sn9j5rszc611fhi8qza5va-kustomize-5.8.0"
+      },
+      "system": "aarch64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "kustomize",
+      "broken": false,
+      "derivation": "/nix/store/q13hga9ap9j5rcg1562a4hmapszyaa0i-kustomize-5.8.0.drv",
+      "description": "Customization of kubernetes YAML configurations",
+      "install_id": "kustomize",
+      "license": "Apache-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=c5ae371f1a6a7fd27823bc500d9390b38c05fa55",
+      "name": "kustomize-5.8.0",
+      "pname": "kustomize",
+      "rev": "c5ae371f1a6a7fd27823bc500d9390b38c05fa55",
+      "rev_count": 895122,
+      "rev_date": "2025-11-12T20:02:36Z",
+      "scrape_date": "2025-11-14T17:52:32.805937Z",
+      "stabilities": [
+        "staging",
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "5.8.0",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/c99cnlnzx3rlxxgqjf2vzzkb08nhnbcz-kustomize-5.8.0"
+      },
+      "system": "x86_64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "kustomize",
+      "broken": false,
+      "derivation": "/nix/store/48j1f3d7hrk7q5miswnbi8cg975y3my8-kustomize-5.8.0.drv",
+      "description": "Customization of kubernetes YAML configurations",
+      "install_id": "kustomize",
+      "license": "Apache-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=c5ae371f1a6a7fd27823bc500d9390b38c05fa55",
+      "name": "kustomize-5.8.0",
+      "pname": "kustomize",
+      "rev": "c5ae371f1a6a7fd27823bc500d9390b38c05fa55",
+      "rev_count": 895122,
+      "rev_date": "2025-11-12T20:02:36Z",
+      "scrape_date": "2025-11-14T18:32:00.791047Z",
+      "stabilities": [
+        "staging",
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "5.8.0",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/s2jdys30fv093q0mqbjw6zhfs51xhszb-kustomize-5.8.0"
+      },
+      "system": "x86_64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
       "attr_path": "curl",
       "broken": false,
       "derivation": "/nix/store/rwrblsf8whf2pimg8a4rnmyka4mj9a9f-curl-8.16.0.drv",
@@ -2331,126 +2451,6 @@
       },
       "system": "x86_64-linux",
       "group": "utils",
-      "priority": 5
-    },
-    {
-      "attr_path": "kustomize",
-      "broken": false,
-      "derivation": "/nix/store/afyxijldpppc5cs0llpa6ahcfqpviw05-kustomize-5.8.0.drv",
-      "description": "Customization of kubernetes YAML configurations",
-      "install_id": "kustomize",
-      "license": "Apache-2.0",
-      "locked_url": "https://github.com/flox/nixpkgs?rev=c5ae371f1a6a7fd27823bc500d9390b38c05fa55",
-      "name": "kustomize-5.8.0",
-      "pname": "kustomize",
-      "rev": "c5ae371f1a6a7fd27823bc500d9390b38c05fa55",
-      "rev_count": 895122,
-      "rev_date": "2025-11-12T20:02:36Z",
-      "scrape_date": "2025-11-14T16:41:32.236943Z",
-      "stabilities": [
-        "staging",
-        "unstable"
-      ],
-      "unfree": false,
-      "version": "5.8.0",
-      "outputs_to_install": [
-        "out"
-      ],
-      "outputs": {
-        "out": "/nix/store/9q6jak68g7h83xr6vynrxrl8k95hrvsf-kustomize-5.8.0"
-      },
-      "system": "aarch64-darwin",
-      "group": "toplevel",
-      "priority": 5
-    },
-    {
-      "attr_path": "kustomize",
-      "broken": false,
-      "derivation": "/nix/store/5ddfigwwl7gig0hs6kvllbx4r6ypiz1r-kustomize-5.8.0.drv",
-      "description": "Customization of kubernetes YAML configurations",
-      "install_id": "kustomize",
-      "license": "Apache-2.0",
-      "locked_url": "https://github.com/flox/nixpkgs?rev=c5ae371f1a6a7fd27823bc500d9390b38c05fa55",
-      "name": "kustomize-5.8.0",
-      "pname": "kustomize",
-      "rev": "c5ae371f1a6a7fd27823bc500d9390b38c05fa55",
-      "rev_count": 895122,
-      "rev_date": "2025-11-12T20:02:36Z",
-      "scrape_date": "2025-11-14T17:18:48.668Z",
-      "stabilities": [
-        "staging",
-        "unstable"
-      ],
-      "unfree": false,
-      "version": "5.8.0",
-      "outputs_to_install": [
-        "out"
-      ],
-      "outputs": {
-        "out": "/nix/store/v80g1f7l40sn9j5rszc611fhi8qza5va-kustomize-5.8.0"
-      },
-      "system": "aarch64-linux",
-      "group": "toplevel",
-      "priority": 5
-    },
-    {
-      "attr_path": "kustomize",
-      "broken": false,
-      "derivation": "/nix/store/q13hga9ap9j5rcg1562a4hmapszyaa0i-kustomize-5.8.0.drv",
-      "description": "Customization of kubernetes YAML configurations",
-      "install_id": "kustomize",
-      "license": "Apache-2.0",
-      "locked_url": "https://github.com/flox/nixpkgs?rev=c5ae371f1a6a7fd27823bc500d9390b38c05fa55",
-      "name": "kustomize-5.8.0",
-      "pname": "kustomize",
-      "rev": "c5ae371f1a6a7fd27823bc500d9390b38c05fa55",
-      "rev_count": 895122,
-      "rev_date": "2025-11-12T20:02:36Z",
-      "scrape_date": "2025-11-14T17:52:32.805937Z",
-      "stabilities": [
-        "staging",
-        "unstable"
-      ],
-      "unfree": false,
-      "version": "5.8.0",
-      "outputs_to_install": [
-        "out"
-      ],
-      "outputs": {
-        "out": "/nix/store/c99cnlnzx3rlxxgqjf2vzzkb08nhnbcz-kustomize-5.8.0"
-      },
-      "system": "x86_64-darwin",
-      "group": "toplevel",
-      "priority": 5
-    },
-    {
-      "attr_path": "kustomize",
-      "broken": false,
-      "derivation": "/nix/store/48j1f3d7hrk7q5miswnbi8cg975y3my8-kustomize-5.8.0.drv",
-      "description": "Customization of kubernetes YAML configurations",
-      "install_id": "kustomize",
-      "license": "Apache-2.0",
-      "locked_url": "https://github.com/flox/nixpkgs?rev=c5ae371f1a6a7fd27823bc500d9390b38c05fa55",
-      "name": "kustomize-5.8.0",
-      "pname": "kustomize",
-      "rev": "c5ae371f1a6a7fd27823bc500d9390b38c05fa55",
-      "rev_count": 895122,
-      "rev_date": "2025-11-12T20:02:36Z",
-      "scrape_date": "2025-11-14T18:32:00.791047Z",
-      "stabilities": [
-        "staging",
-        "unstable"
-      ],
-      "unfree": false,
-      "version": "5.8.0",
-      "outputs_to_install": [
-        "out"
-      ],
-      "outputs": {
-        "out": "/nix/store/s2jdys30fv093q0mqbjw6zhfs51xhszb-kustomize-5.8.0"
-      },
-      "system": "x86_64-linux",
-      "group": "toplevel",
       "priority": 5
     }
   ]

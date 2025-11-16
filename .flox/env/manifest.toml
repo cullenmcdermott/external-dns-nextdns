@@ -92,6 +92,12 @@ KIND_CLUSTER_NAME = "kind-external-dns-dev"
 
 [hook]
 on-activate = '''
+# Workaround for glibc TLS race condition (BZ #19329) in GitHub Actions
+# Flox's LD_AUDIT causes "Inconsistency detected by ld.so: dl-tls.c" errors
+# when Go toolchain dynamically loads libraries. Fixed in Flox v1.4.1 for some
+# programs, but still affects Go. See: https://github.com/flox/flox/issues/1341
+unset LD_AUDIT
+
 setup_go_deps() {
   local deps_flag="$FLOX_ENV_CACHE/.go_deps_installed"
   if [ ! -f "$deps_flag" ] && [ -f "$FLOX_ENV_PROJECT/go.mod" ]; then
