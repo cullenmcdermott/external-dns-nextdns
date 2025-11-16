@@ -39,24 +39,23 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Version: $VERSION"
 
-      - name: Install Flox
-        uses: flox/activate-flox@v1
+      - name: Install flox
+        uses: flox/install-flox-action@v2
 
       - name: Run tests
-        run: flox activate -- just test
+        uses: flox/activate-action@v1
+        with:
+          command: just test
 
       - name: Build binaries
-        run: |
-          # Build for multiple platforms using Flox environment
-          flox activate -- bash -c "
+        uses: flox/activate-action@v1
+        with:
+          command: |
             GOOS=linux GOARCH=amd64 go build -ldflags='-s -w -X main.Version=${{ steps.get_version.outputs.version }}' -o webhook-linux-amd64 ./cmd/webhook
             GOOS=linux GOARCH=arm64 go build -ldflags='-s -w -X main.Version=${{ steps.get_version.outputs.version }}' -o webhook-linux-arm64 ./cmd/webhook
             GOOS=darwin GOARCH=amd64 go build -ldflags='-s -w -X main.Version=${{ steps.get_version.outputs.version }}' -o webhook-darwin-amd64 ./cmd/webhook
             GOOS=darwin GOARCH=arm64 go build -ldflags='-s -w -X main.Version=${{ steps.get_version.outputs.version }}' -o webhook-darwin-arm64 ./cmd/webhook
-
-            # Create checksums
             sha256sum webhook-* > checksums.txt
-          "
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
