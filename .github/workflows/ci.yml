@@ -19,6 +19,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Cache Nix store
+        uses: actions/cache@v4
+        with:
+          path: |
+            /nix/store
+            ~/.cache/nix
+          key: nix-${{ runner.os }}-${{ hashFiles('.flox/env/manifest.lock') }}
+          restore-keys: |
+            nix-${{ runner.os }}-
+
       - name: Install flox
         uses: flox/install-flox-action@v2
 
@@ -34,6 +44,16 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Cache Nix store
+        uses: actions/cache@v4
+        with:
+          path: |
+            /nix/store
+            ~/.cache/nix
+          key: nix-${{ runner.os }}-${{ hashFiles('.flox/env/manifest.lock') }}
+          restore-keys: |
+            nix-${{ runner.os }}-
 
       - name: Install flox
         uses: flox/install-flox-action@v2
@@ -98,6 +118,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Cache Nix store
+        uses: actions/cache@v4
+        with:
+          path: |
+            /nix/store
+            ~/.cache/nix
+          key: nix-${{ runner.os }}-${{ hashFiles('.flox/env/manifest.lock') }}
+          restore-keys: |
+            nix-${{ runner.os }}-
+
       - name: Install flox
         uses: flox/install-flox-action@v2
 
@@ -120,6 +150,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Cache Nix store
+        uses: actions/cache@v4
+        with:
+          path: |
+            /nix/store
+            ~/.cache/nix
+          key: nix-${{ runner.os }}-${{ hashFiles('.flox/env/manifest.lock') }}
+          restore-keys: |
+            nix-${{ runner.os }}-
+
       - name: Install flox
         uses: flox/install-flox-action@v2
 
@@ -135,6 +175,16 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Cache Nix store
+        uses: actions/cache@v4
+        with:
+          path: |
+            /nix/store
+            ~/.cache/nix
+          key: nix-${{ runner.os }}-${{ hashFiles('.flox/env/manifest.lock') }}
+          restore-keys: |
+            nix-${{ runner.os }}-
 
       - name: Install flox
         uses: flox/install-flox-action@v2
