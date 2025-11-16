@@ -22,26 +22,26 @@ type Config struct {
 	DomainFilter []string
 
 	// Behavior configuration
-	DryRun            bool
-	AllowOverwrite    bool
-	LogLevel          string
-	SupportedRecords  []string
-	DefaultTTL        int
+	DryRun           bool
+	AllowOverwrite   bool
+	LogLevel         string
+	SupportedRecords []string
+	DefaultTTL       int
 }
 
 // LoadConfig loads configuration from environment variables
 func LoadConfig() (*Config, error) {
 	config := &Config{
-		APIKey:    getEnv("NEXTDNS_API_KEY", ""),
-		ProfileID: getEnv("NEXTDNS_PROFILE_ID", ""),
-		BaseURL:   getEnv("NEXTDNS_BASE_URL", "https://api.nextdns.io"),
-		ServerPort: getEnvInt("SERVER_PORT", 8888),
-		HealthPort: getEnvInt("HEALTH_PORT", 8080),
-		DryRun:     getEnvBool("DRY_RUN", false),
-		AllowOverwrite: getEnvBool("ALLOW_OVERWRITE", false),
-		LogLevel:   getEnv("LOG_LEVEL", "info"),
+		APIKey:           getEnv("NEXTDNS_API_KEY", ""),
+		ProfileID:        getEnv("NEXTDNS_PROFILE_ID", ""),
+		BaseURL:          getEnv("NEXTDNS_BASE_URL", "https://api.nextdns.io"),
+		ServerPort:       getEnvInt("SERVER_PORT", 8888),
+		HealthPort:       getEnvInt("HEALTH_PORT", 8080),
+		DryRun:           getEnvBool("DRY_RUN", false),
+		AllowOverwrite:   getEnvBool("ALLOW_OVERWRITE", false),
+		LogLevel:         getEnv("LOG_LEVEL", "info"),
 		SupportedRecords: getEnvList("SUPPORTED_RECORDS", []string{"A", "AAAA", "CNAME"}),
-		DefaultTTL: getEnvInt("DEFAULT_TTL", 300),
+		DefaultTTL:       getEnvInt("DEFAULT_TTL", 300),
 	}
 
 	// Domain filter

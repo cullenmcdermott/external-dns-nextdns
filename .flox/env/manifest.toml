@@ -11,7 +11,7 @@ version = 1
 [install]
 # Go toolchain - pinned to stable version
 go.pkg-path = "go"
-go.version = "^1.23.0"
+go.version = "=1.25"
 go.pkg-group = "build"
 
 # Go development tools
@@ -33,6 +33,12 @@ kubectl.pkg-group = "k8s"
 
 helm.pkg-path = "kubernetes-helm"
 helm.pkg-group = "k8s"
+
+ctlptl.pkg-path = "ctlptl"
+ctlptl.pkg-group = "k8s"
+
+tilt.pkg-path = "tilt"
+tilt.pkg-group = "k8s"
 
 # Container tools
 docker.pkg-path = "docker"
@@ -58,9 +64,12 @@ git.pkg-group = "utils"
 curl.pkg-path = "curl"
 curl.pkg-group = "utils"
 
-# Optional: hot-reload for development
-air.pkg-path = "air"
-air.pkg-group = "dev"
+op.pkg-path = "_1password-cli"
+op.pkg-group = "utils"
+
+gum.pkg-path = "gum"
+gum.pkg-group = "utils"
+kustomize.pkg-path = "kustomize"
 
 [vars]
 # Project metadata
@@ -78,98 +87,88 @@ LOG_LEVEL = "info"
 # Docker image name
 DOCKER_IMAGE = "external-dns-nextdns-webhook"
 
-# Kind cluster name
-KIND_CLUSTER_NAME = "external-dns-dev"
+# Kind cluster name (matches ctlptl config)
+KIND_CLUSTER_NAME = "kind-external-dns-dev"
 
 [hook]
 on-activate = '''
-echo "🚀 Activating external-dns-nextdns-webhook development environment"
-echo ""
+setup_go_deps() {
+  local deps_flag="$FLOX_ENV_CACHE/.go_deps_installed"
+  if [ ! -f "$deps_flag" ] && [ -f "$FLOX_ENV_PROJECT/go.mod" ]; then
+    go mod download && touch "$deps_flag"
+  fi
+}
+
+setup_kubectl_context() {
+  # Set kubectl context to kind cluster if it exists
+  if kind get clusters 2>/dev/null | grep -q "^${KIND_CLUSTER_NAME}$"; then
+    kubectl config use-context "${KIND_CLUSTER_NAME}" >/dev/null 2>&1
+  fi
+}
 
 # Set up Go cache within Flox environment for isolation
-export GOENV="$FLOX_ENV_CACHE/goenv"
-export GOCACHE="$FLOX_ENV_CACHE/go-build"
-export GOMODCACHE="$FLOX_ENV_CACHE/go/pkg/mod"
-
-# Ensure Go directories exist
+export GOENV="${FLOX_ENV_CACHE:-/tmp}/goenv"
+export GOCACHE="${FLOX_ENV_CACHE:-/tmp}/go-build"
+export GOMODCACHE="${FLOX_ENV_CACHE:-/tmp}/go/pkg/mod"
 mkdir -p "$GOENV" "$GOCACHE" "$GOMODCACHE"
 
-# Download Go dependencies if go.mod exists
-if [ -f go.mod ]; then
-  echo "📦 Downloading Go dependencies..."
-  go mod download
-fi
+# Run setup functions
+setup_go_deps
+setup_kubectl_context
 
-# Check if Docker daemon is running
-if ! docker info > /dev/null 2>&1; then
-  echo "⚠️  Warning: Docker daemon is not running"
-  echo "   Please start Docker to use kind and container commands"
-  echo ""
-fi
-
-# Display environment info
-echo "✅ Environment ready!"
-echo ""
-echo "Go version: $(go version | cut -d' ' -f3)"
-echo "Kind version: $(kind version 2>/dev/null | head -n1 || echo 'N/A')"
-echo "Kubectl version: $(kubectl version --client --short 2>/dev/null || echo 'N/A')"
-echo ""
-echo "Available commands (run 'just' to see all):"
-echo "  just build       - Build the webhook binary"
-echo "  just test        - Run tests"
-echo "  just kind-up     - Start kind cluster"
-echo "  just kind-down   - Stop kind cluster"
-echo ""
-echo "To start services: flox services start"
-echo "To see service logs: flox services logs kind"
+# Return to project directory
+cd "$FLOX_ENV_PROJECT"
 '''
 
-[services.kind]
+[services.dev]
 command = """
-# Check if cluster already exists
-if kind get clusters 2>/dev/null | grep -q "^${KIND_CLUSTER_NAME}$"; then
-  echo "Kind cluster '${KIND_CLUSTER_NAME}' already exists, skipping creation"
-  exit 0
-fi
+set -e  # Exit on error
+cd "$FLOX_ENV_PROJECT"
 
-# Create kind cluster with custom configuration
-cat <<EOF | kind create cluster --name ${KIND_CLUSTER_NAME} --config=-
-kind: Cluster
-apiVersion: kind.x-k8s.io/v1alpha4
-nodes:
-  - role: control-plane
-    extraPortMappings:
-      - containerPort: 8080
-        hostPort: 8080
-        protocol: TCP
-      - containerPort: 8888
-        hostPort: 8888
-        protocol: TCP
-networking:
-  apiServerAddress: "127.0.0.1"
-  apiServerPort: 6443
-EOF
+# Cleanup function to run on exit
+cleanup() {
+  echo ""
+  echo "🛑 Cleaning up development environment..."
 
-# Wait for cluster to be ready
-echo "Waiting for cluster to be ready..."
-kubectl wait --for=condition=Ready nodes --all --timeout=60s
+  # Stop tilt resources
+  tilt down 2>/dev/null || true
 
-echo "✅ Kind cluster '${KIND_CLUSTER_NAME}' is ready!"
+  # Delete kind cluster completely
+  echo "🗑️  Deleting kind cluster..."
+  ctlptl delete cluster kind-external-dns-dev 2>/dev/null || true
+
+  echo "✅ Development environment cleaned up"
+}
+
+# Register cleanup function to run on exit
+trap cleanup EXIT INT TERM
+
+echo "🚀 Starting development environment..."
+echo ""
+
+# Set kubeconfig explicitly for the service
+export KUBECONFIG="$HOME/.kube/config"
+
+# Create/ensure cluster exists with ctlptl
+echo "🎡 Creating kind cluster with ctlptl..."
+ctlptl apply -f ctlptl-config.yaml
+
+# Set kubectl context
+echo "🔧 Setting kubectl context..."
+kubectl config use-context "${KIND_CLUSTER_NAME}"
+
+# Wait for cluster to be fully ready
+echo "⏳ Waiting for cluster to be ready..."
+kubectl wait --for=condition=Ready nodes --all --timeout=90s
+
+echo "✅ Kind cluster ready!"
+echo ""
+echo "🎨 Starting Tilt..."
+
+# Start tilt in foreground (cleanup will run on exit via trap)
+tilt up --host 0.0.0.0 --port 10350
 """
 
-# Services that fork to background need this
-is-daemon = true
-
-[services.kind.shutdown]
-command = "kind delete cluster --name ${KIND_CLUSTER_NAME}"
-
-[profile]
-# Optional: Define different profiles for different scenarios
-# Users can activate with: flox activate -r profile-name
-
-[profile.common]
-# Common packages for all profiles (already defined in [install])
-
-[profile.ci]
-# Minimal profile for CI/CD environments
-# Could exclude dev tools, air, etc.
+# [profile] section is for shell-specific functions and aliases
+# Use [profile.common] for all shells, [profile.bash] for bash-specific, etc.
+# For different environment variants, create separate flox environments or use layering

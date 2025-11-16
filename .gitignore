@@ -39,6 +39,7 @@ secrets/
 # Temporary files
 tmp/
 temp/
+*.go.*  # Go fmt temporary files
 
 # Flox environment cache
 .flox/cache/
@@ -61,3 +62,4 @@ webhook-linux-amd64
 
 # Vendor directory (if using vendoring)
 vendor/
+deploy/kubernetes/secret-dev.yaml

@@ -1,0 +1,23 @@
+apiVersion: ctlptl.dev/v1alpha1
+kind: Registry
+name: ctlptl-registry
+port: 5005
+---
+apiVersion: ctlptl.dev/v1alpha1
+kind: Cluster
+product: kind
+registry: ctlptl-registry
+name: kind-external-dns-dev
+kindV1Alpha4Cluster:
+  nodes:
+    - role: control-plane
+      extraPortMappings:
+        - containerPort: 8080
+          hostPort: 8080
+          protocol: TCP
+        - containerPort: 8888
+          hostPort: 8888
+          protocol: TCP
+  networking:
+    apiServerAddress: "127.0.0.1"
+    apiServerPort: 6443

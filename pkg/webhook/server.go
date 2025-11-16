@@ -19,9 +19,9 @@ const (
 
 // Server represents the webhook HTTP server
 type Server struct {
-	config   *nextdns.Config
-	provider provider.Provider
-	apiServer *http.Server
+	config       *nextdns.Config
+	provider     provider.Provider
+	apiServer    *http.Server
 	healthServer *http.Server
 }
 

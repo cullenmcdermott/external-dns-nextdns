@@ -1,0 +1,18 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Development overlay - disables read-only filesystem for Tilt live updates
+# DO NOT use this in production!
+
+resources:
+  - ../../kubernetes
+
+patches:
+  # Disable read-only filesystem for nextdns-webhook container to allow Tilt live updates
+  - target:
+      kind: Deployment
+      name: external-dns-nextdns
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/securityContext/readOnlyRootFilesystem
+        value: false
