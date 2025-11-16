@@ -151,9 +151,6 @@ jobs:
       - name: Install flox
         uses: flox/install-flox-action@v2
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
       - name: Build Docker image
         uses: flox/activate-action@v1
         with:
@@ -167,13 +164,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Install flox
+        uses: flox/install-flox-action@v2
+
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
+        uses: flox/activate-action@v1
         with:
-          scan-type: 'fs'
-          scan-ref: '.'
-          format: 'table'
-          exit-code: '0'  # Don't fail on vulnerabilities, just report them
+          command: trivy fs --format table --exit-code 0 .
 
   # Summary job
   ci-success:

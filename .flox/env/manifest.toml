@@ -47,6 +47,10 @@ docker.pkg-group = "containers"
 docker-compose.pkg-path = "docker-compose"
 docker-compose.pkg-group = "containers"
 
+# Security scanning
+trivy.pkg-path = "trivy"
+trivy.pkg-group = "security"
+
 # Task runner
 just.pkg-path = "just"
 just.pkg-group = "build"
