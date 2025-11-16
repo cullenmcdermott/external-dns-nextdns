@@ -25,7 +25,7 @@ jobs:
       - name: Run code quality checks
         uses: flox/activate-action@v1
         with:
-          command: just check
+          command: env -u LD_LIBRARY_PATH just check
 
   # Test with coverage
   test:
@@ -41,12 +41,12 @@ jobs:
       - name: Download dependencies
         uses: flox/activate-action@v1
         with:
-          command: just deps
+          command: env -u LD_LIBRARY_PATH just deps
 
       - name: Run tests with coverage
         uses: flox/activate-action@v1
         with:
-          command: just test-coverage
+          command: env -u LD_LIBRARY_PATH just test-coverage
 
       - name: Upload coverage to artifacts
         uses: actions/upload-artifact@v4
@@ -61,9 +61,11 @@ jobs:
         uses: flox/activate-action@v1
         with:
           command: |
-            COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//')
-            echo "percentage=$COVERAGE" >> $GITHUB_OUTPUT
-            echo "Total coverage: $COVERAGE%"
+            env -u LD_LIBRARY_PATH bash -c '
+              COVERAGE=$(go tool cover -func=coverage.out | grep total | awk "{print \$3}" | sed "s/%//")
+              echo "percentage=$COVERAGE" >> $GITHUB_OUTPUT
+              echo "Total coverage: $COVERAGE%"
+            '
 
       - name: Comment coverage on PR
         if: github.event_name == 'pull_request'
@@ -102,7 +104,7 @@ jobs:
       - name: Build binary
         uses: flox/activate-action@v1
         with:
-          command: VERSION=ci-${{ github.sha }} just build
+          command: env -u LD_LIBRARY_PATH VERSION=ci-${{ github.sha }} just build
 
       - name: Verify binary
         run: |
@@ -124,7 +126,7 @@ jobs:
       - name: Build Docker image
         uses: flox/activate-action@v1
         with:
-          command: VERSION=ci just docker-build
+          command: env -u LD_LIBRARY_PATH VERSION=ci just docker-build
 
   # Security scanning
   security:
@@ -140,7 +142,7 @@ jobs:
       - name: Run Trivy vulnerability scanner
         uses: flox/activate-action@v1
         with:
-          command: trivy fs --format table --exit-code 0 .
+          command: env -u LD_LIBRARY_PATH trivy fs --format table --exit-code 0 .
 
   # Summary job
   ci-success:

@@ -45,17 +45,19 @@ jobs:
       - name: Run tests
         uses: flox/activate-action@v1
         with:
-          command: just test
+          command: env -u LD_LIBRARY_PATH just test
 
       - name: Build binaries
         uses: flox/activate-action@v1
         with:
           command: |
-            GOOS=linux GOARCH=amd64 go build -ldflags='-s -w -X main.Version=${{ steps.get_version.outputs.version }}' -o webhook-linux-amd64 ./cmd/webhook
-            GOOS=linux GOARCH=arm64 go build -ldflags='-s -w -X main.Version=${{ steps.get_version.outputs.version }}' -o webhook-linux-arm64 ./cmd/webhook
-            GOOS=darwin GOARCH=amd64 go build -ldflags='-s -w -X main.Version=${{ steps.get_version.outputs.version }}' -o webhook-darwin-amd64 ./cmd/webhook
-            GOOS=darwin GOARCH=arm64 go build -ldflags='-s -w -X main.Version=${{ steps.get_version.outputs.version }}' -o webhook-darwin-arm64 ./cmd/webhook
-            sha256sum webhook-* > checksums.txt
+            env -u LD_LIBRARY_PATH bash -c '
+              GOOS=linux GOARCH=amd64 go build -ldflags="-s -w -X main.Version=${{ steps.get_version.outputs.version }}" -o webhook-linux-amd64 ./cmd/webhook
+              GOOS=linux GOARCH=arm64 go build -ldflags="-s -w -X main.Version=${{ steps.get_version.outputs.version }}" -o webhook-linux-arm64 ./cmd/webhook
+              GOOS=darwin GOARCH=amd64 go build -ldflags="-s -w -X main.Version=${{ steps.get_version.outputs.version }}" -o webhook-darwin-amd64 ./cmd/webhook
+              GOOS=darwin GOARCH=arm64 go build -ldflags="-s -w -X main.Version=${{ steps.get_version.outputs.version }}" -o webhook-darwin-arm64 ./cmd/webhook
+              sha256sum webhook-* > checksums.txt
+            '
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
