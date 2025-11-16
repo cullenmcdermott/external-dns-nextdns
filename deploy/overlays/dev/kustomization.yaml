@@ -6,6 +6,7 @@ kind: Kustomization
 
 resources:
   - ../../kubernetes
+  - ../../kubernetes/example-ingress.yaml
 
 # Override ConfigMap for development
 configMapGenerator:
