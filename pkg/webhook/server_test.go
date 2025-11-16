@@ -10,6 +10,7 @@ import (
 
 	"github.com/cullenmcdermott/external-dns-nextdns-webhook/internal/nextdns"
 	"sigs.k8s.io/external-dns/endpoint"
+	"sigs.k8s.io/external-dns/plan"
 )
 
 // mockProvider implements the provider.Provider interface for testing
@@ -19,7 +20,7 @@ func (m *mockProvider) Records(ctx context.Context) ([]*endpoint.Endpoint, error
 	return []*endpoint.Endpoint{}, nil
 }
 
-func (m *mockProvider) ApplyChanges(ctx context.Context, changes *endpoint.Changes) error {
+func (m *mockProvider) ApplyChanges(ctx context.Context, changes *plan.Changes) error {
 	return nil
 }
 
