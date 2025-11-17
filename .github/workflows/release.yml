@@ -19,7 +19,7 @@ jobs:
   # Create GitHub release
   release:
     name: Create Release
-    runs-on: ubuntu-latest
+    runs-on: home-runners
     outputs:
       version: ${{ steps.get_version.outputs.version }}
     steps:
@@ -74,7 +74,7 @@ jobs:
   # Build and push Docker image
   docker:
     name: Build and Push Docker Image
-    runs-on: ubuntu-latest
+    runs-on: home-runners
     needs: release
     steps:
       - name: Checkout code
@@ -108,7 +108,7 @@ jobs:
   # Generate Kubernetes manifests
   manifests:
     name: Generate Kubernetes Manifests
-    runs-on: ubuntu-latest
+    runs-on: home-runners
     needs: [release, docker]
     steps:
       - name: Checkout code
