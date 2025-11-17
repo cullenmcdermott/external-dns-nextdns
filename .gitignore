@@ -54,7 +54,6 @@ coverage.out
 coverage.html
 
 # Binary outputs
-webhook
 webhook-linux-amd64
 
 # Just command artifacts

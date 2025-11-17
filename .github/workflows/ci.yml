@@ -1,0 +1,213 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  # Code quality checks using Just
+  check:
+    name: Code Quality (lint, fmt, vet)
+    runs-on: home-runners
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      #- name: Cache Nix store
+      #  uses: actions/cache@v4
+      #  with:
+      #    path: |
+      #      /nix/store
+      #      ~/.cache/nix
+      #    key: nix-${{ runner.os }}-${{ hashFiles('.flox/env/manifest.lock') }}
+      #    restore-keys: |
+      #      nix-${{ runner.os }}-
+
+      - name: Install flox
+        uses: flox/install-flox-action@v2
+
+      - name: Run code quality checks
+        uses: flox/activate-action@v1
+        with:
+          command: just check
+
+  # Test with coverage
+  test:
+    name: Test & Coverage
+    runs-on: home-runners
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      #- name: Cache Nix store
+      #  uses: actions/cache@v4
+      #  with:
+      #    path: |
+      #      /nix/store
+      #      ~/.cache/nix
+      #    key: nix-${{ runner.os }}-${{ hashFiles('.flox/env/manifest.lock') }}
+      #    restore-keys: |
+      #      nix-${{ runner.os }}-
+
+      - name: Install flox
+        uses: flox/install-flox-action@v2
+
+      - name: Download dependencies
+        uses: flox/activate-action@v1
+        with:
+          command: just deps
+
+      - name: Run tests with coverage
+        uses: flox/activate-action@v1
+        with:
+          command: just test-coverage
+
+      - name: Upload coverage to artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: |
+            coverage.out
+            coverage.html
+
+      - name: Calculate coverage percentage
+        id: coverage
+        uses: flox/activate-action@v1
+        with:
+          command: |
+            bash -c '
+              COVERAGE=$(go tool cover -func=coverage.out | grep total | awk "{print \$3}" | sed "s/%//")
+              echo "percentage=$COVERAGE" >> $GITHUB_OUTPUT
+              echo "Total coverage: $COVERAGE%"
+            '
+
+      - name: Comment coverage on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const coverage = '${{ steps.coverage.outputs.percentage }}';
+            const emoji = coverage >= 80 ? '🟢' : coverage >= 60 ? '🟡' : '🔴';
+            const comment = `## ${emoji} Test Coverage Report
+
+            **Total Coverage:** ${coverage}%
+
+            Download the detailed coverage report from the workflow artifacts.
+
+            ${coverage >= 80 ? '✅ Great coverage!' : coverage >= 60 ? '⚠️ Coverage could be improved' : '❌ Coverage is below recommended threshold (80%)'}
+            `;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+  # Build verification
+  build:
+    name: Build
+    runs-on: home-runners
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      #- name: Cache Nix store
+      #  uses: actions/cache@v4
+      #  with:
+      #    path: |
+      #      /nix/store
+      #      ~/.cache/nix
+      #    key: nix-${{ runner.os }}-${{ hashFiles('.flox/env/manifest.lock') }}
+      #    restore-keys: |
+      #      nix-${{ runner.os }}-
+
+      - name: Install flox
+        uses: flox/install-flox-action@v2
+
+      - name: Build binary
+        uses: flox/activate-action@v1
+        with:
+          command: VERSION=ci-${{ github.sha }} just build
+
+      - name: Verify binary
+        run: |
+          ./webhook --version || echo "Binary built successfully"
+          file ./webhook
+          ls -lh ./webhook
+
+  # Docker build verification
+  docker:
+    name: Docker Build
+    runs-on: home-runners
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      #- name: Cache Nix store
+      #  uses: actions/cache@v4
+      #  with:
+      #    path: |
+      #      /nix/store
+      #      ~/.cache/nix
+      #    key: nix-${{ runner.os }}-${{ hashFiles('.flox/env/manifest.lock') }}
+      #    restore-keys: |
+      #      nix-${{ runner.os }}-
+
+      - name: Install flox
+        uses: flox/install-flox-action@v2
+
+      - name: Build Docker image
+        uses: flox/activate-action@v1
+        with:
+          command: VERSION=ci just docker-build
+
+  # Security scanning
+  security:
+    name: Security Scan
+    runs-on: home-runners
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      #- name: Cache Nix store
+      #  uses: actions/cache@v4
+      #  with:
+      #    path: |
+      #      /nix/store
+      #      ~/.cache/nix
+      #    key: nix-${{ runner.os }}-${{ hashFiles('.flox/env/manifest.lock') }}
+      #    restore-keys: |
+      #      nix-${{ runner.os }}-
+
+      - name: Install flox
+        uses: flox/install-flox-action@v2
+
+      - name: Run Trivy vulnerability scanner
+        uses: flox/activate-action@v1
+        with:
+          command: trivy fs --format table --exit-code 0 .
+
+  # Summary job
+  ci-success:
+    name: CI Success
+    runs-on: home-runners
+    needs: [check, test, build, docker]
+    if: always()
+    steps:
+      - name: Check all jobs
+        run: |
+          if [[ "${{ needs.check.result }}" != "success" ]] || \
+             [[ "${{ needs.test.result }}" != "success" ]] || \
+             [[ "${{ needs.build.result }}" != "success" ]] || \
+             [[ "${{ needs.docker.result }}" != "success" ]]; then
+            echo "One or more CI jobs failed"
+            exit 1
+          fi
+          echo "All CI jobs passed successfully! ✅"

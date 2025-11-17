@@ -79,7 +79,7 @@ dev-status:
 # Build the webhook binary
 build:
     @echo "🔨 Building {{binary_name}}..."
-    go build -ldflags="-s -w -X main.Version={{version}}" -o {{binary_name}} ./cmd/webhook
+    @LD_LIBRARY_PATH="" go build -ldflags="-s -w -X main.Version={{version}}" -o {{binary_name}} ./cmd/webhook
     @echo "✅ Build complete: {{binary_name}}"
 
 # Build Docker image
@@ -105,24 +105,24 @@ clean:
 # Run all tests
 test:
     @echo "🧪 Running all tests..."
-    go test -v -race ./...
+    @LD_LIBRARY_PATH="" go test -v -race ./...
 
 # Run unit tests only (fast, no external dependencies)
 test-unit:
     @echo "🧪 Running unit tests..."
-    go test -v -race -short ./...
+    @LD_LIBRARY_PATH="" go test -v -race -short ./...
 
 # Run integration tests only (may require test NextDNS profile)
 test-integration:
     @echo "🧪 Running integration tests..."
-    go test -v -race -run Integration ./...
+    @LD_LIBRARY_PATH="" go test -v -race -run Integration ./...
 
 # Run tests with coverage report
 test-coverage:
     @echo "🧪 Running tests with coverage..."
-    go test -v -race -coverprofile=coverage.out ./...
+    @go test -v -coverprofile=coverage.out ./...
     @echo "📊 Generating coverage report..."
-    go tool cover -html=coverage.out -o coverage.html
+    @go tool cover -html=coverage.out -o coverage.html
     @echo "✅ Coverage report generated: coverage.html"
 
 # ==========================================
@@ -136,19 +136,20 @@ check: fmt vet lint
 # Format code
 fmt:
     @echo "📝 Formatting code..."
-    go fmt ./...
+    @LD_LIBRARY_PATH="" go fmt ./...
     @echo "✅ Format complete"
 
 # Run go vet
 vet:
     @echo "🔍 Running go vet..."
-    go vet ./...
+    @LD_LIBRARY_PATH="" go vet ./...
     @echo "✅ Vet complete"
 
 # Run golangci-lint
 lint:
     @echo "🔍 Running golangci-lint..."
-    golangci-lint run
+    @# Workaround for Nix/Flox ld.so TLS error in CI environments
+    @LD_LIBRARY_PATH="" golangci-lint run
     @echo "✅ Lint complete"
 
 # ==========================================
@@ -158,11 +159,11 @@ lint:
 # Download dependencies
 deps:
     @echo "📦 Downloading dependencies..."
-    go mod download
+    @LD_LIBRARY_PATH="" go mod download
     @echo "✅ Dependencies downloaded"
 
 # Tidy dependencies
 tidy:
     @echo "📦 Tidying dependencies..."
-    go mod tidy
+    @LD_LIBRARY_PATH="" go mod tidy
     @echo "✅ Dependencies tidied"

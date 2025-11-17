@@ -9,25 +9,28 @@ import (
 	"time"
 
 	"github.com/cullenmcdermott/external-dns-nextdns-webhook/internal/nextdns"
+	"sigs.k8s.io/external-dns/endpoint"
+	"sigs.k8s.io/external-dns/plan"
+	"sigs.k8s.io/external-dns/provider"
 )
 
 // mockProvider implements the provider.Provider interface for testing
 type mockProvider struct{}
 
-func (m *mockProvider) Records(ctx context.Context) (interface{}, error) {
-	return []interface{}{}, nil
+func (m *mockProvider) Records(ctx context.Context) ([]*endpoint.Endpoint, error) {
+	return []*endpoint.Endpoint{}, nil
 }
 
-func (m *mockProvider) ApplyChanges(ctx context.Context, changes interface{}) error {
+func (m *mockProvider) ApplyChanges(ctx context.Context, changes *plan.Changes) error {
 	return nil
 }
 
-func (m *mockProvider) AdjustEndpoints(endpoints interface{}) (interface{}, error) {
+func (m *mockProvider) AdjustEndpoints(endpoints []*endpoint.Endpoint) ([]*endpoint.Endpoint, error) {
 	return endpoints, nil
 }
 
-func (m *mockProvider) GetDomainFilter() interface{} {
-	return nil
+func (m *mockProvider) GetDomainFilter() endpoint.DomainFilter {
+	return endpoint.DomainFilter{}
 }
 
 func TestNewServer(t *testing.T) {
@@ -38,12 +41,12 @@ func TestNewServer(t *testing.T) {
 		HealthPort: 8080,
 	}
 
-	validProvider := &mockProvider{}
+	validProvider := provider.Provider(&mockProvider{})
 
 	tests := []struct {
 		name     string
 		config   *nextdns.Config
-		provider interface{}
+		provider provider.Provider
 		wantErr  bool
 	}{
 		{
@@ -68,13 +71,7 @@ func TestNewServer(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Convert provider to the expected type for the function
-			var p interface{}
-			if tt.provider != nil {
-				p = tt.provider
-			}
-
-			got, err := NewServer(tt.config, p)
+			got, err := NewServer(tt.config, tt.provider)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewServer() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -107,7 +104,7 @@ func TestHealthEndpoint(t *testing.T) {
 	server.handleHealth(w, req)
 
 	resp := w.Result()
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		t.Errorf("handleHealth() status = %v, want %v", resp.StatusCode, http.StatusOK)
@@ -144,7 +141,7 @@ func TestReadyEndpoint(t *testing.T) {
 	server.handleReady(w, req)
 
 	resp := w.Result()
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		t.Errorf("handleReady() status = %v, want %v", resp.StatusCode, http.StatusOK)
@@ -191,7 +188,7 @@ func TestServerShutdown(t *testing.T) {
 	if err != nil {
 		t.Logf("Health check failed (server might not be started yet): %v", err)
 	} else {
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 		if resp.StatusCode != http.StatusOK {
 			t.Errorf("Health check status = %v, want %v", resp.StatusCode, http.StatusOK)
 		}

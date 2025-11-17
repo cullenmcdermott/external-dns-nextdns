@@ -136,12 +136,12 @@ func (s *Server) shutdown() error {
 // handleHealth handles health check requests
 func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("OK"))
+	_, _ = w.Write([]byte("OK"))
 }
 
 // handleReady handles readiness check requests
 func (s *Server) handleReady(w http.ResponseWriter, r *http.Request) {
 	// TODO: Add actual readiness checks (e.g., can connect to NextDNS API)
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("Ready"))
+	_, _ = w.Write([]byte("Ready"))
 }

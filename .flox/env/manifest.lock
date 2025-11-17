@@ -75,6 +75,10 @@
         "pkg-path": "tilt",
         "pkg-group": "k8s"
       },
+      "trivy": {
+        "pkg-path": "trivy",
+        "pkg-group": "security"
+      },
       "yq": {
         "pkg-path": "yq-go",
         "pkg-group": "utils"
@@ -1563,6 +1567,126 @@
       },
       "system": "x86_64-linux",
       "group": "k8s",
+      "priority": 5
+    },
+    {
+      "attr_path": "trivy",
+      "broken": false,
+      "derivation": "/nix/store/jhq9bn37wib9idl1c9hiqhj7a5zyiyq0-trivy-0.66.0.drv",
+      "description": "Simple and comprehensive vulnerability scanner for containers, suitable for CI",
+      "install_id": "trivy",
+      "license": "Apache-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=c5ae371f1a6a7fd27823bc500d9390b38c05fa55",
+      "name": "trivy-0.66.0",
+      "pname": "trivy",
+      "rev": "c5ae371f1a6a7fd27823bc500d9390b38c05fa55",
+      "rev_count": 895122,
+      "rev_date": "2025-11-12T20:02:36Z",
+      "scrape_date": "2025-11-14T16:43:21.221229Z",
+      "stabilities": [
+        "staging",
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "0.66.0",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/wc3xw2l63w64g0fhwhc3vs7czqfykaxg-trivy-0.66.0"
+      },
+      "system": "aarch64-darwin",
+      "group": "security",
+      "priority": 5
+    },
+    {
+      "attr_path": "trivy",
+      "broken": false,
+      "derivation": "/nix/store/sm1fl4g944d5c85b7kdshiiiq136ys32-trivy-0.66.0.drv",
+      "description": "Simple and comprehensive vulnerability scanner for containers, suitable for CI",
+      "install_id": "trivy",
+      "license": "Apache-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=c5ae371f1a6a7fd27823bc500d9390b38c05fa55",
+      "name": "trivy-0.66.0",
+      "pname": "trivy",
+      "rev": "c5ae371f1a6a7fd27823bc500d9390b38c05fa55",
+      "rev_count": 895122,
+      "rev_date": "2025-11-12T20:02:36Z",
+      "scrape_date": "2025-11-14T17:21:10.155053Z",
+      "stabilities": [
+        "staging",
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "0.66.0",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/pbmcj20hh5bvxvaqgk3sw9c347dkgjsd-trivy-0.66.0"
+      },
+      "system": "aarch64-linux",
+      "group": "security",
+      "priority": 5
+    },
+    {
+      "attr_path": "trivy",
+      "broken": false,
+      "derivation": "/nix/store/b2d6y7nz0s1wnlsx15xchmkcl7lfs3yg-trivy-0.66.0.drv",
+      "description": "Simple and comprehensive vulnerability scanner for containers, suitable for CI",
+      "install_id": "trivy",
+      "license": "Apache-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=c5ae371f1a6a7fd27823bc500d9390b38c05fa55",
+      "name": "trivy-0.66.0",
+      "pname": "trivy",
+      "rev": "c5ae371f1a6a7fd27823bc500d9390b38c05fa55",
+      "rev_count": 895122,
+      "rev_date": "2025-11-12T20:02:36Z",
+      "scrape_date": "2025-11-14T17:54:20.908967Z",
+      "stabilities": [
+        "staging",
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "0.66.0",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/9xkx9adcp0lxhwidx8li2p1i5ag4jylh-trivy-0.66.0"
+      },
+      "system": "x86_64-darwin",
+      "group": "security",
+      "priority": 5
+    },
+    {
+      "attr_path": "trivy",
+      "broken": false,
+      "derivation": "/nix/store/79nn5sffgcw8b0fwdwjam0aamgglmc5y-trivy-0.66.0.drv",
+      "description": "Simple and comprehensive vulnerability scanner for containers, suitable for CI",
+      "install_id": "trivy",
+      "license": "Apache-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=c5ae371f1a6a7fd27823bc500d9390b38c05fa55",
+      "name": "trivy-0.66.0",
+      "pname": "trivy",
+      "rev": "c5ae371f1a6a7fd27823bc500d9390b38c05fa55",
+      "rev_count": 895122,
+      "rev_date": "2025-11-12T20:02:36Z",
+      "scrape_date": "2025-11-14T18:34:31.915712Z",
+      "stabilities": [
+        "staging",
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "0.66.0",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/7pdgk87fdwph2b4mlhi4rg52ggba88vm-trivy-0.66.0"
+      },
+      "system": "x86_64-linux",
+      "group": "security",
       "priority": 5
     },
     {

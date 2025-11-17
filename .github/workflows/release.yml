@@ -1,0 +1,136 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g., v1.0.0)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  # Create GitHub release
+  release:
+    name: Create Release
+    runs-on: home-runners
+    outputs:
+      version: ${{ steps.get_version.outputs.version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get version
+        id: get_version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION=${{ inputs.tag }}
+          else
+            VERSION=${GITHUB_REF#refs/tags/}
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION"
+
+      - name: Install flox
+        uses: flox/install-flox-action@v2
+
+      - name: Run tests
+        uses: flox/activate-action@v1
+        with:
+          command: env -u LD_LIBRARY_PATH just test
+
+      - name: Build binaries
+        uses: flox/activate-action@v1
+        with:
+          command: |
+            env -u LD_LIBRARY_PATH bash -c '
+              GOOS=linux GOARCH=amd64 go build -ldflags="-s -w -X main.Version=${{ steps.get_version.outputs.version }}" -o webhook-linux-amd64 ./cmd/webhook
+              GOOS=linux GOARCH=arm64 go build -ldflags="-s -w -X main.Version=${{ steps.get_version.outputs.version }}" -o webhook-linux-arm64 ./cmd/webhook
+              GOOS=darwin GOARCH=amd64 go build -ldflags="-s -w -X main.Version=${{ steps.get_version.outputs.version }}" -o webhook-darwin-amd64 ./cmd/webhook
+              GOOS=darwin GOARCH=arm64 go build -ldflags="-s -w -X main.Version=${{ steps.get_version.outputs.version }}" -o webhook-darwin-arm64 ./cmd/webhook
+              sha256sum webhook-* > checksums.txt
+            '
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.get_version.outputs.version }}
+          name: Release ${{ steps.get_version.outputs.version }}
+          draft: false
+          prerelease: ${{ contains(steps.get_version.outputs.version, '-rc') || contains(steps.get_version.outputs.version, '-beta') || contains(steps.get_version.outputs.version, '-alpha') }}
+          generate_release_notes: true
+          files: |
+            webhook-*
+            checksums.txt
+
+  # Build and push Docker image
+  docker:
+    name: Build and Push Docker Image
+    runs-on: home-runners
+    needs: release
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install flox
+        uses: flox/install-flox-action@v2
+
+      - name: Login to GitHub Container Registry
+        uses: flox/activate-action@v1
+        with:
+          command: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Build and push Docker image
+        uses: flox/activate-action@v1
+        with:
+          command: |
+            VERSION="${{ needs.release.outputs.version }}"
+            REGISTRY="ghcr.io/${{ github.repository }}"
+
+            # Build multi-platform image and push to registry
+            docker buildx create --use --name multiarch-builder || docker buildx use multiarch-builder
+            docker buildx build \
+              --platform linux/amd64,linux/arm64 \
+              --build-arg VERSION=${VERSION} \
+              --tag ${REGISTRY}:${VERSION} \
+              --tag ${REGISTRY}:latest \
+              --push \
+              .
+
+  # Generate Kubernetes manifests
+  manifests:
+    name: Generate Kubernetes Manifests
+    runs-on: home-runners
+    needs: [release, docker]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Update image version in manifests
+        run: |
+          VERSION=${{ needs.release.outputs.version }}
+          # Update deployment.yaml with new image tag
+          if [ -f deploy/deployment.yaml ]; then
+            sed -i "s|image:.*external-dns-nextdns-webhook.*|image: ghcr.io/${{ github.repository }}:${VERSION}|g" deploy/deployment.yaml
+          fi
+
+      - name: Create manifest archive
+        run: |
+          if [ -d deploy ]; then
+            tar -czf kubernetes-manifests.tar.gz deploy/
+          fi
+
+      - name: Upload manifests to release
+        if: hashFiles('kubernetes-manifests.tar.gz') != ''
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ needs.release.outputs.version }}
+          files: kubernetes-manifests.tar.gz
