@@ -1,0 +1,60 @@
+❌ ERROR: Failed to build environment:
+
+Failed to realise 'op':
+this derivation will be built:
+  /nix/store/9gvyjk240dahz9xdj3z7pmb4s83362bi-1password-cli-2.32.0.drv
+error (ignored): error: cannot get exit status of PID 1224: No child processes
+Nix crashed. This is a bug. Please report this at https://github.com/NixOS/nix/issues with the following information included:
+
+Exception: nix::SysError: \x1b[31;1merror:\x1b[0m cannot get exit status of PID \x1b[35;1m1224\x1b[0m: \x1b[35;1mNo child processes\x1b[0m
+Stack trace:
+ 0# 0x000055C427FF34B6 in /nix/store/13dd4h1zp953x0ln7yyarr27d581svj0-nix-2.28.4/bin/nix
+ 1# 0x00007EF1C92BF1AA in /nix/store/ysdkxvcvy2sy36sqigkyqanixm76z2xh-gcc-14.3.0-lib/lib/libstdc++.so.6
+ 2# __cxa_call_terminate in /nix/store/ysdkxvcvy2sy36sqigkyqanixm76z2xh-gcc-14.3.0-lib/lib/libstdc++.so.6
+ 3# __gxx_personality_v0 in /nix/store/ysdkxvcvy2sy36sqigkyqanixm76z2xh-gcc-14.3.0-lib/lib/libstdc++.so.6
+ 4# 0x00007EF1C9903A19 in /nix/store/ysdkxvcvy2sy36sqigkyqanixm76z2xh-gcc-14.3.0-lib/lib/libgcc_s.so.1
+ 5# _Unwind_RaiseException in /nix/store/ysdkxvcvy2sy36sqigkyqanixm76z2xh-gcc-14.3.0-lib/lib/libgcc_s.so.1
+ 6# __cxa_throw in /nix/store/ysdkxvcvy2sy36sqigkyqanixm76z2xh-gcc-14.3.0-lib/lib/libstdc++.so.6
+ 7# 0x00007EF1CA09085E in /nix/store/13dd4h1zp953x0ln7yyarr27d581svj0-nix-2.28.4/lib/libnixutil.so
+ 8# nix::Pid::~Pid() in /nix/store/13dd4h1zp953x0ln7yyarr27d581svj0-nix-2.28.4/lib/libnixutil.so
+ 9# nix::LocalDerivationGoal::~LocalDerivationGoal() in /nix/store/13dd4h1zp953x0ln7yyarr27d581svj0-nix-2.28.4/lib/libnixstore.so
+10# std::_Sp_counted_base<(__gnu_cxx::_Lock_policy)2>::_M_release_last_use_cold() in /nix/store/13dd4h1zp953x0ln7yyarr27d581svj0-nix-2.28.4/bin/nix
+11# 0x00007EF1C9BCF99E in /nix/store/13dd4h1zp953x0ln7yyarr27d581svj0-nix-2.28.4/lib/libnixstore.so
+12# nix::Worker::~Worker() in /nix/store/13dd4h1zp953x0ln7yyarr27d581svj0-nix-2.28.4/lib/libnixstore.so
+13# 0x00007EF1C9B0C27F in /nix/store/13dd4h1zp953x0ln7yyarr27d581svj0-nix-2.28.4/lib/libnixstore.so
+14# nix::Installable::build2(nix::ref<nix::Store>, nix::ref<nix::Store>, nix::Realise, std::vector<nix::ref<nix::Installable>, std::allocator<nix::ref<nix::Installable> > > const&, nix::BuildMode) in /nix/store/13dd4h1zp953x0ln7yyarr27d581svj0-nix-2.28.4/lib/libnixcmd.so
+15# nix::Installable::build(nix::ref<nix::Store>, nix::ref<nix::Store>, nix::Realise, std::vector<nix::ref<nix::Installable>, std::allocator<nix::ref<nix::Installable> > > const&, nix::BuildMode) in /nix/store/13dd4h1zp953x0ln7yyarr27d581svj0-nix-2.28.4/lib/libnixcmd.so
+16# 0x000055C427FD867C in /nix/store/13dd4h1zp953x0ln7yyarr27d581svj0-nix-2.28.4/bin/nix
+17# nix::InstallablesCommand::run(nix::ref<nix::Store>, std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > >&&) in /nix/store/13dd4h1zp953x0ln7yyarr27d581svj0-nix-2.28.4/lib/libnixcmd.so
+18# nix::RawInstallablesCommand::run(nix::ref<nix::Store>) in /nix/store/13dd4h1zp953x0ln7yyarr27d581svj0-nix-2.28.4/lib/libnixcmd.so
+19# nix::StoreCommand::run() in /nix/store/13dd4h1zp953x0ln7yyarr27d581svj0-nix-2.28.4/lib/libnixcmd.so
+20# 0x000055C4280A019D in /nix/store/13dd4h1zp953x0ln7yyarr27d581svj0-nix-2.28.4/bin/nix
+21# nix::handleExceptions(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, std::function<void ()>) in /nix/store/13dd4h1zp953x0ln7yyarr27d581svj0-nix-2.28.4/lib/libnixmain.so
+22# 0x000055C427FAA945 in /nix/store/13dd4h1zp953x0ln7yyarr27d581svj0-nix-2.28.4/bin/nix
+23# 0x00007EF1C8E2A4D8 in /nix/store/8p33is69mjdw3bi1wmi8v2zpsxir8nwd-glibc-2.40-66/lib/libc.so.6
+24# __libc_start_main in /nix/store/8p33is69mjdw3bi1wmi8v2zpsxir8nwd-glibc-2.40-66/lib/libc.so.6
+25# 0x000055C427FB2E35 in /nix/store/13dd4h1zp953x0ln7yyarr27d581svj0-nix-2.28.4/bin/nix
+
+
+
+   0: anyhow::error::<impl core::convert::From<E> for anyhow::Error>::from
+   1: flox::commands::activate::Activate::activate::{{closure}}
+   2: flox::commands::FloxArgs::handle::{{closure}}::{{closure}}
+   3: tokio::runtime::task::core::Core<T,S>::poll
+   4: tokio::runtime::task::harness::Harness<T,S>::poll
+   5: tokio::task::local::LocalSet::tick
+   6: <tokio::task::local::RunUntil<T> as core::future::future::Future>::poll
+   7: flox::commands::FloxArgs::handle::{{closure}}
+   8: flox::run::{{closure}}
+   9: tokio::runtime::park::CachedParkThread::block_on
+  10: tokio::runtime::runtime::Runtime::block_on
+  11: flox::main
+  12: std::sys::backtrace::__rust_begin_short_backtrace
+  13: std::rt::lang_start::{{closure}}
+  14: std::rt::lang_start_internal
+  15: main
+  16: __libc_start_call_main
+  17: __libc_start_main_alias_1
+  18: _start
+
+Exit code: 1
