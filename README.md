@@ -299,6 +299,40 @@ go test ./...
 just test-coverage
 ```
 
+### Dependency Management
+
+This project uses automated dependency updates to keep all dependencies current and secure.
+
+#### Renovate Bot
+
+[Renovate](https://docs.renovatebot.com/) automatically creates pull requests for dependency updates:
+
+- **Go modules** (go.mod): Updated automatically with semantic versioning
+- **Docker base images** (Dockerfile): Updated to latest stable versions
+- **GitHub Actions**: Updated when new versions are available
+
+Renovate runs weekly on Mondays at 6am UTC and groups related updates together.
+
+**Configuration**: See [renovate.json](./renovate.json) for the full configuration.
+
+#### Flox Environment Updates
+
+**Important**: Renovate does not currently support Flox manifests ([feature request](https://discourse.flox.dev/t/enable-renovate-to-manage-versions-in-manifest-toml/1093)).
+
+For Flox package updates, we use a scheduled GitHub Actions workflow:
+
+- **Workflow**: `.github/workflows/flox-update.yml`
+- **Schedule**: Weekly on Mondays at 6am UTC (after Renovate)
+- **Behavior**: Automatically creates a PR when Flox packages have updates
+
+**Manual update**:
+```bash
+flox activate
+flox update
+```
+
+This updates all packages in `.flox/env/manifest.toml` to their latest versions.
+
 ## Contributing
 
 Contributions are welcome! Please see [IMPLEMENTATION_PLAN.md](./IMPLEMENTATION_PLAN.md) for current priorities.

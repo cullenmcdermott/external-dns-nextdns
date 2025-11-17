@@ -1,0 +1,109 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "Renovate configuration for external-dns-nextdns-webhook",
+  "extends": [
+    "config:recommended",
+    ":semanticCommits",
+    ":dependencyDashboard"
+  ],
+  "labels": ["dependencies"],
+  "schedule": ["before 6am on monday"],
+  "timezone": "UTC",
+  "prConcurrentLimit": 3,
+  "prHourlyLimit": 2,
+  "packageRules": [
+    {
+      "description": "Go module dependencies - group patch updates",
+      "matchManagers": ["gomod"],
+      "matchUpdateTypes": ["patch"],
+      "groupName": "Go patch dependencies",
+      "automerge": false,
+      "labels": ["go", "patch"]
+    },
+    {
+      "description": "Go module dependencies - minor updates",
+      "matchManagers": ["gomod"],
+      "matchUpdateTypes": ["minor"],
+      "labels": ["go", "minor"],
+      "automerge": false
+    },
+    {
+      "description": "Go module dependencies - major updates (review carefully)",
+      "matchManagers": ["gomod"],
+      "matchUpdateTypes": ["major"],
+      "labels": ["go", "major"],
+      "automerge": false
+    },
+    {
+      "description": "Docker base images - group and update together",
+      "matchManagers": ["dockerfile"],
+      "groupName": "Docker base images",
+      "labels": ["docker"],
+      "automerge": false,
+      "matchUpdateTypes": ["minor", "patch"]
+    },
+    {
+      "description": "Docker base images - major versions (review carefully)",
+      "matchManagers": ["dockerfile"],
+      "matchUpdateTypes": ["major"],
+      "labels": ["docker", "major"],
+      "automerge": false
+    },
+    {
+      "description": "Pin Go Docker images to specific minor versions",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["golang"],
+      "versioning": "docker"
+    },
+    {
+      "description": "Pin Alpine Docker images to specific versions",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["alpine"],
+      "versioning": "docker"
+    },
+    {
+      "description": "GitHub Actions - auto-update patch and minor",
+      "matchManagers": ["github-actions"],
+      "groupName": "GitHub Actions",
+      "labels": ["github-actions"],
+      "automerge": false,
+      "matchUpdateTypes": ["minor", "patch"]
+    },
+    {
+      "description": "External-DNS - critical dependency, review carefully",
+      "matchPackageNames": ["sigs.k8s.io/external-dns"],
+      "labels": ["external-dns", "critical"],
+      "automerge": false,
+      "reviewers": []
+    },
+    {
+      "description": "NextDNS SDK - critical dependency, review carefully",
+      "matchPackageNames": ["github.com/amalucelli/nextdns-go"],
+      "labels": ["nextdns", "critical"],
+      "automerge": false,
+      "reviewers": []
+    }
+  ],
+  "postUpdateOptions": [
+    "gomodTidy",
+    "gomodUpdateImportPaths"
+  ],
+  "vulnerabilityAlerts": {
+    "labels": ["security"],
+    "automerge": false
+  },
+  "customManagers": [
+    {
+      "description": "Flox manifest versions - NOTE: Not fully supported by Renovate yet. See: https://discourse.flox.dev/t/enable-renovate-to-manage-versions-in-manifest-toml/1093",
+      "customType": "regex",
+      "fileMatch": ["(^|/)\\.flox/env/manifest\\.toml$"],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>.*?) depName=(?<depName>.*?)\\n.*?version = \"(?<currentValue>.*)\"",
+        "pkg-path = \"(?<depName>.*)\"\\n.*?version = \"(?<currentValue>.*)\""
+      ],
+      "datasourceTemplate": "{{#if datasource}}{{{datasource}}}{{else}}nixpkgs{{/if}}",
+      "versioningTemplate": "{{#if versioning}}{{{versioning}}}{{else}}semver{{/if}}"
+    }
+  ],
+  "ignoreDeps": []
+}

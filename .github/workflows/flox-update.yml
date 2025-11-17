@@ -1,0 +1,83 @@
+name: Update Flox Environment
+
+on:
+  schedule:
+    # Run weekly on Mondays at 6am UTC (after Renovate runs)
+    - cron: '0 6 * * 1'
+  workflow_dispatch: # Allow manual trigger
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update-flox:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Flox
+        uses: flox/install-flox-action@v1
+
+      - name: Activate Flox environment
+        run: flox activate
+
+      - name: Update Flox packages
+        id: update
+        run: |
+          # Run flox update and capture output
+          flox update 2>&1 | tee flox-update.log
+
+          # Check if there were any updates
+          if git diff --quiet .flox/; then
+            echo "updated=false" >> $GITHUB_OUTPUT
+            echo "No Flox updates available"
+          else
+            echo "updated=true" >> $GITHUB_OUTPUT
+            echo "Flox packages were updated"
+          fi
+
+      - name: Create Pull Request
+        if: steps.update.outputs.updated == 'true'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: 'chore(flox): update environment packages'
+          committer: 'github-actions[bot] <github-actions[bot]@users.noreply.github.com>'
+          author: 'github-actions[bot] <github-actions[bot]@users.noreply.github.com>'
+          branch: flox/update-packages
+          delete-branch: true
+          title: 'chore(flox): update environment packages'
+          body: |
+            ## Flox Environment Update
+
+            This PR updates the Flox environment packages to their latest versions.
+
+            ### Changes
+
+            The following Flox packages have been updated:
+
+            ```
+            ${{ steps.update.outputs.log }}
+            ```
+
+            ### Testing Checklist
+
+            - [ ] Environment activates successfully: `flox activate`
+            - [ ] Go toolchain works: `go version`
+            - [ ] Build succeeds: `just build`
+            - [ ] Tests pass: `just test`
+            - [ ] Kubernetes tools work: `kubectl version --client`
+
+            ### Notes
+
+            This is an automated PR created by the Flox update workflow.
+            Since Renovate doesn't support Flox manifests yet, we use this scheduled workflow.
+
+            See: https://discourse.flox.dev/t/enable-renovate-to-manage-versions-in-manifest-toml/1093
+          labels: |
+            dependencies
+            flox
+            automated
+          draft: false
