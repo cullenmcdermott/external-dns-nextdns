@@ -58,11 +58,71 @@ func NewProvider(config *Config) (*Provider, error) {
 func (p *Provider) Records(ctx context.Context) ([]*endpoint.Endpoint, error) {
 	log.Debug("Fetching records from NextDNS")
 
-	// TODO: Implement actual NextDNS API call
-	// For now, return empty list as this is a scaffold
+	// If in dry-run mode, return empty list
+	if p.config.DryRun {
+		log.Debug("Dry run mode enabled, skipping record fetch")
+		return []*endpoint.Endpoint{}, nil
+	}
 
-	log.Info("Records fetched from NextDNS")
-	return []*endpoint.Endpoint{}, nil
+	// Fetch all DNS rewrites from NextDNS
+	rewrites, err := p.client.ListRewrites(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch records from NextDNS: %w", err)
+	}
+
+	log.WithField("count", len(rewrites)).Debug("Retrieved rewrites from NextDNS")
+
+	// Convert NextDNS rewrites to external-dns endpoints
+	endpoints := make([]*endpoint.Endpoint, 0, len(rewrites))
+	for _, rewrite := range rewrites {
+		// Skip records that don't match our domain filter
+		if len(p.config.DomainFilter) > 0 && !p.matchesDomainFilter(rewrite.Name) {
+			log.WithFields(log.Fields{
+				"name": rewrite.Name,
+				"type": rewrite.Type,
+			}).Debug("Skipping record that doesn't match domain filter")
+			continue
+		}
+
+		// Skip unsupported record types
+		if !p.isSupportedRecordType(rewrite.Type) {
+			log.WithFields(log.Fields{
+				"name": rewrite.Name,
+				"type": rewrite.Type,
+			}).Debug("Skipping unsupported record type")
+			continue
+		}
+
+		// Create endpoint from rewrite
+		ep := endpoint.NewEndpoint(
+			rewrite.Name,
+			rewrite.Type,
+			endpoint.TTL(0), // NextDNS doesn't support custom TTL
+			rewrite.Content,
+		)
+
+		// Store the NextDNS rewrite ID in the endpoint's provider-specific data
+		// This will be useful for updates and deletes
+		if ep.ProviderSpecific == nil {
+			ep.ProviderSpecific = make(endpoint.ProviderSpecific, 0)
+		}
+		ep.ProviderSpecific = append(ep.ProviderSpecific, endpoint.ProviderSpecificProperty{
+			Name:  "nextdns-id",
+			Value: rewrite.ID,
+		})
+
+		endpoints = append(endpoints, ep)
+
+		log.WithFields(log.Fields{
+			"name":    rewrite.Name,
+			"type":    rewrite.Type,
+			"content": rewrite.Content,
+			"id":      rewrite.ID,
+		}).Debug("Converted rewrite to endpoint")
+	}
+
+	log.WithField("count", len(endpoints)).Info("Successfully fetched records from NextDNS")
+	return endpoints, nil
 }
 
 // ApplyChanges applies the given changes to NextDNS

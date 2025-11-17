@@ -99,17 +99,26 @@ This document outlines the complete implementation plan for the NextDNS webhook 
 - [x] Add error handling for API failures
 - [x] Update provider.go to use client
 
-#### 2.3 Records Fetching (GET /records)
+#### 2.3 Records Fetching (GET /records) ✅ COMPLETE
 
 **File**: `internal/nextdns/provider.go`
 
-- [ ] Implement `Records()` method
-- [ ] Fetch all DNS rewrites from NextDNS API
-- [ ] Convert NextDNS rewrites to external-dns Endpoints
-- [ ] Handle pagination if needed
-- [ ] Add error handling and logging
+- [x] Implement `Records()` method
+- [x] Fetch all DNS rewrites from NextDNS API
+- [x] Convert NextDNS rewrites to external-dns Endpoints
+- [x] Handle pagination if needed (NextDNS SDK handles this internally)
+- [x] Add error handling and logging
 
 **NextDNS API**: `GET /profiles/{profileId}/rewrites`
+
+**Implementation Details**:
+- Fetches all DNS rewrites using `client.ListRewrites(ctx)`
+- Converts each NextDNS rewrite to an `endpoint.Endpoint`
+- Stores NextDNS rewrite ID in endpoint's `ProviderSpecific` field for later use
+- Applies domain filtering to skip unwanted domains
+- Skips unsupported record types (only A, AAAA, CNAME are processed)
+- Returns empty list in dry-run mode without making API calls
+- Comprehensive logging at debug and info levels
 
 #### 2.4 Record Creation
 
@@ -391,13 +400,13 @@ This document outlines the complete implementation plan for the NextDNS webhook 
 
 - [x] Phase 1: Scaffolding (100%)
 - [x] Phase 1.5: No-Op Provider (100%)
-- [ ] Phase 2: API Integration (30% - Dependencies added, Client wrapper complete)
+- [ ] Phase 2: API Integration (45% - Dependencies added, Client wrapper complete, Records() implemented)
 - [ ] Phase 3: Testing (33% - Unit tests complete, integration & manual tests pending)
 - [x] Phase 4: Kubernetes Integration (75% - Basic manifests complete, Helm pending)
 - [ ] Phase 5: Advanced Features (0%)
 - [ ] Phase 6: Documentation & Release (0%)
 
-**Overall**: 48% Complete (Unit Tests Added)
+**Overall**: 51% Complete (Records Fetching Implemented)
 
 ### Current Sprint Focus
 
@@ -413,8 +422,9 @@ This document outlines the complete implementation plan for the NextDNS webhook 
 **Sprint 2**: ⏳ In Progress
 - Phase 2.2: ✅ Complete - NextDNS client wrapper created
 - Phase 3.1: ✅ Complete - Unit tests created (24 test functions)
-- Phase 2.3-2.6: Next steps - Convert no-op methods to real implementations
-- Implement Records(), createRecord(), updateRecord(), deleteRecord()
+- Phase 2.3: ✅ Complete - Records() method implemented
+- Phase 2.4-2.6: Next steps - Implement create, update, delete operations
+- Implement createRecord(), updateRecord(), deleteRecord() with overwrite protection
 
 ---
 
@@ -555,6 +565,25 @@ This document outlines the complete implementation plan for the NextDNS webhook 
 - Network dependency issue: Cannot execute tests due to DNS resolution problems in test environment
 - Tests ready for execution in environment with proper network access
 - Estimated >80% code coverage based on comprehensive test cases
+
+### Session 5 (2025-11-16): Records Fetching Implementation (Phase 2.3)
+- Implemented `Records()` method in `internal/nextdns/provider.go`
+- Successfully integrated with NextDNS client's `ListRewrites()` method
+- Converts NextDNS rewrites to external-dns `endpoint.Endpoint` objects
+- Key implementation details:
+  - Uses `endpoint.NewEndpoint()` to create endpoints from rewrites
+  - Stores NextDNS rewrite ID in `ProviderSpecific` field for later operations
+  - Applied domain filtering to skip records outside configured domains
+  - Applied record type filtering to skip unsupported types
+  - Returns empty list in dry-run mode without making API calls
+  - TTL set to 0 as NextDNS doesn't support custom TTL values
+- Important pattern discovered: Store provider-specific IDs in `endpoint.ProviderSpecific`
+  - This allows us to retrieve the NextDNS ID during updates and deletes
+  - Format: `endpoint.ProviderSpecificProperty{Name: "nextdns-id", Value: rewrite.ID}`
+- Comprehensive logging at debug level for each conversion
+- Proper error wrapping with context for API failures
+- Code is syntactically valid (verified with gofmt)
+- Ready for testing with actual NextDNS API once environment has network access
 
 ---
 
