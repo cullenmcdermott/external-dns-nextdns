@@ -1,0 +1,25 @@
+❌ ERROR: Failed to get latest version of remote environment: Failed to clone environment: Git failed with: [exit code 128]
+  stdout: 
+  stderr: fatal: unable to access 'https://api.flox.dev/git/barstoolbluz/floxmeta/': CONNECT tunnel failed, response 401
+
+
+   0: anyhow::error::<impl anyhow::Error>::new
+   1: flox::commands::EnvironmentSelect::to_concrete_environment
+   2: flox::commands::FloxArgs::handle::{{closure}}::{{closure}}
+   3: tokio::runtime::task::core::Core<T,S>::poll
+   4: tokio::runtime::task::harness::Harness<T,S>::poll
+   5: tokio::task::local::LocalSet::tick
+   6: <tokio::task::local::RunUntil<T> as core::future::future::Future>::poll
+   7: flox::commands::FloxArgs::handle::{{closure}}
+   8: flox::run::{{closure}}
+   9: tokio::runtime::park::CachedParkThread::block_on
+  10: tokio::runtime::runtime::Runtime::block_on
+  11: flox::main
+  12: std::sys::backtrace::__rust_begin_short_backtrace
+  13: std::rt::lang_start::{{closure}}
+  14: std::rt::lang_start_internal
+  15: main
+  16: __libc_start_call_main
+  17: __libc_start_main_alias_1
+  18: _start
+
