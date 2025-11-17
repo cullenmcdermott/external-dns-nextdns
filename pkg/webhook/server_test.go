@@ -11,6 +11,7 @@ import (
 	"github.com/cullenmcdermott/external-dns-nextdns-webhook/internal/nextdns"
 	"sigs.k8s.io/external-dns/endpoint"
 	"sigs.k8s.io/external-dns/plan"
+	"sigs.k8s.io/external-dns/provider"
 )
 
 // mockProvider implements the provider.Provider interface for testing
@@ -40,12 +41,12 @@ func TestNewServer(t *testing.T) {
 		HealthPort: 8080,
 	}
 
-	validProvider := &mockProvider{}
+	validProvider := provider.Provider(&mockProvider{})
 
 	tests := []struct {
 		name     string
 		config   *nextdns.Config
-		provider *mockProvider
+		provider provider.Provider
 		wantErr  bool
 	}{
 		{
