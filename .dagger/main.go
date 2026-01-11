@@ -149,18 +149,18 @@ func (m *ExternalDnsNextdns) PublishDocker(
 		fmt.Sprintf("%s:latest", imageName),
 	}
 
-	// Publish each platform variant
+	// Publish all platform variants together as a manifest list
 	var publishedAddrs []string
-	for _, container := range containers {
-		for _, tag := range tags {
-			addr, err := container.
-				WithRegistryAuth(registryAddress, registryUsername, registryPassword).
-				Publish(ctx, tag)
-			if err != nil {
-				return nil, fmt.Errorf("failed to publish %s: %w", tag, err)
-			}
-			publishedAddrs = append(publishedAddrs, addr)
+	for _, tag := range tags {
+		addr, err := dag.Container().
+			WithRegistryAuth(registryAddress, registryUsername, registryPassword).
+			Publish(ctx, tag, dagger.ContainerPublishOpts{
+				PlatformVariants: containers,
+			})
+		if err != nil {
+			return nil, fmt.Errorf("failed to publish %s: %w", tag, err)
 		}
+		publishedAddrs = append(publishedAddrs, addr)
 	}
 
 	return publishedAddrs, nil
