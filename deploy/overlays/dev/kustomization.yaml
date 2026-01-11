@@ -6,7 +6,8 @@ kind: Kustomization
 
 resources:
   - ../../kubernetes
-  - example-ingress.yaml
+  - ingress-nginx.yaml
+  - test-workload.yaml
 
 patches:
   # Override ConfigMap values for development
@@ -30,3 +31,16 @@ patches:
       - op: replace
         path: /spec/template/spec/containers/0/securityContext/readOnlyRootFilesystem
         value: false
+      - op: replace
+        path: /spec/template/spec/containers/0/securityContext/runAsNonRoot
+        value: false
+      - op: replace
+        path: /spec/template/spec/containers/0/securityContext/runAsUser
+        value: 0
+      # Increase memory for in-container Go builds during development
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/memory
+        value: "1Gi"
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/memory
+        value: "512Mi"

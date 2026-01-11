@@ -21,23 +21,25 @@ watch_settings(ignore=[
     'Dockerfile.tmp.*',
 ])
 
-# Build Docker image with live reload
-docker_build(
+# Build Docker image with restart support for development
+# Uses Dockerfile.dev which includes Go toolchain for in-container rebuilds
+docker_build_with_restart(
     image_name,
     '.',
-    dockerfile='Dockerfile',
-    # Live update: sync Go files and restart on changes
+    dockerfile='Dockerfile.dev',
+    entrypoint=['/app/webhook'],
+    # Live update: sync Go files and rebuild
     live_update=[
         # Sync source files
         sync('./cmd', '/app/cmd'),
         sync('./internal', '/app/internal'),
         sync('./pkg', '/app/pkg'),
+        sync('./go.mod', '/app/go.mod'),
+        sync('./go.sum', '/app/go.sum'),
         # Rebuild on Go file changes
         run('cd /app && CGO_ENABLED=0 go build -o webhook ./cmd/webhook',
             trigger=['./cmd', './internal', './pkg']),
     ],
-    # Build arguments
-    build_args={'VERSION': 'dev-tilt'},
 )
 
 # Secret management - try 1Password first, fallback to dev secret
@@ -140,14 +142,26 @@ k8s_resource(
     labels=['app'],
 )
 
-# Example resources for testing external-dns
+# Ingress controller for development (let Tilt auto-manage supporting resources)
+k8s_resource(
+    'ingress-nginx-controller',
+    new_name='ingress-controller',
+    labels=['infra'],
+)
+
+# Test workload for verifying external-dns creates DNS records
+k8s_resource(
+    'test-app',
+    labels=['test'],
+    resource_deps=['webhook'],
+)
+
 k8s_resource(
     objects=[
-        'example-app:ingress:default',
-        'example-loadbalancer:service:default',
+        'test-app:Ingress:default',
     ],
-    new_name='examples',
-    labels=['examples'],
+    new_name='test-ingress',
+    labels=['test'],
 )
 
 # Watch for changes in Go files

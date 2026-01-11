@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    name: CI Pipeline
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Dagger CI Pipeline
+        uses: dagger/dagger-for-github@v8
+        with:
+          version: "latest"
+          verb: "call"
+          args: "ci --source=."
+
+      - name: Export Coverage
+        uses: dagger/dagger-for-github@v8
+        with:
+          version: "latest"
+          verb: "call"
+          args: "test-coverage --source=. export --path=coverage.out"
+
+      - name: Upload Coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: coverage.out
+          fail_ci_if_error: false
+        continue-on-error: true

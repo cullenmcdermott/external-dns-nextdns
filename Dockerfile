@@ -1,6 +1,8 @@
 # Build stage
 FROM golang:1.25-alpine AS builder
 
+ARG VERSION=dev
+
 WORKDIR /app
 
 # Install build dependencies
@@ -17,7 +19,7 @@ COPY . .
 
 # Build the application
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo \
-    -ldflags="-s -w -X main.Version=${VERSION:-dev}" \
+    -ldflags="-s -w -X main.Version=${VERSION}" \
     -o webhook ./cmd/webhook
 
 # Final stage

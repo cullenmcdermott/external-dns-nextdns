@@ -11,13 +11,12 @@
 # Output of the go coverage tool
 *.out
 
-# Go workspace file
-go.work
+# Go workspace sum (generated, not the work file itself)
+go.work.sum
 
 # Build output
 /dist/
 /bin/
-/webhook
 
 # IDE specific files
 .vscode/
@@ -48,6 +47,9 @@ temp/
 # Air hot-reload artifacts
 .air.toml.bak
 build-errors.log
+
+# Workflow backups
+*.yml.bak
 
 # Test coverage reports
 coverage.out

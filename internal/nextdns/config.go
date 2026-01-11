@@ -23,7 +23,6 @@ type Config struct {
 
 	// Behavior configuration
 	DryRun           bool
-	AllowOverwrite   bool
 	LogLevel         string
 	SupportedRecords []string
 	DefaultTTL       int
@@ -38,7 +37,6 @@ func LoadConfig() (*Config, error) {
 		ServerPort:       getEnvInt("SERVER_PORT", 8888),
 		HealthPort:       getEnvInt("HEALTH_PORT", 8080),
 		DryRun:           getEnvBool("DRY_RUN", false),
-		AllowOverwrite:   getEnvBool("ALLOW_OVERWRITE", false),
 		LogLevel:         getEnv("LOG_LEVEL", "info"),
 		SupportedRecords: getEnvList("SUPPORTED_RECORDS", []string{"A", "AAAA", "CNAME"}),
 		DefaultTTL:       getEnvInt("DEFAULT_TTL", 300),

@@ -1,0 +1,31 @@
+# Development Dockerfile with live reload support
+# NOTE: Runs as root to enable Tilt live updates (source file syncing)
+# Production Dockerfile uses non-root user for security
+FROM golang:1.25-alpine
+
+# Install build dependencies
+RUN apk add --no-cache git ca-certificates
+
+WORKDIR /app
+
+# Copy go mod files first for caching
+COPY go.mod go.sum* ./
+
+# Download dependencies
+RUN go mod download
+
+# Copy source code
+COPY . .
+
+# Build the application
+RUN CGO_ENABLED=0 go build -o webhook ./cmd/webhook
+
+# Expose ports
+EXPOSE 8080 8888
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:8080/healthz || exit 1
+
+# Run the webhook
+ENTRYPOINT ["/app/webhook"]

@@ -1,101 +1,57 @@
 # Flox Environment Manifest for external-dns-nextdns-webhook
-# This manifest defines the complete development environment including:
-# - Go toolchain and development tools
-# - Kubernetes testing tools (kind, kubectl)
-# - Container tools (Docker)
-# - Code quality tools (linters, formatters)
-# - Task runner (Just)
 
 version = 1
 
 [install]
-# Go toolchain - pinned to stable version
+# Go toolchain
 go.pkg-path = "go"
 go.version = "=1.25"
-go.pkg-group = "build"
 
 # Go development tools
 golangci-lint.pkg-path = "golangci-lint"
-golangci-lint.pkg-group = "dev"
-
-delve.pkg-path = "delve"  # Go debugger
-delve.pkg-group = "dev"
-
-go-tools.pkg-path = "gotools"  # godoc, goimports, etc.
-go-tools.pkg-group = "dev"
+delve.pkg-path = "delve"
+go-tools.pkg-path = "gotools"
 
 # Kubernetes tools
 kind.pkg-path = "kind"
-kind.pkg-group = "k8s"
-
 kubectl.pkg-path = "kubectl"
-kubectl.pkg-group = "k8s"
-
 helm.pkg-path = "kubernetes-helm"
-helm.pkg-group = "k8s"
-
 ctlptl.pkg-path = "ctlptl"
-ctlptl.pkg-group = "k8s"
-
 tilt.pkg-path = "tilt"
-tilt.pkg-group = "k8s"
+kustomize.pkg-path = "kustomize"
 
 # Container tools
 docker.pkg-path = "docker"
-docker.pkg-group = "containers"
-
 docker-compose.pkg-path = "docker-compose"
-docker-compose.pkg-group = "containers"
 
 # Task runner
 just.pkg-path = "just"
-just.pkg-group = "build"
+
+# CI/CD tools
+dagger.flake = "github:dagger/nix#dagger"
+git-cliff.pkg-path = "git-cliff"
 
 # Utilities
 jq.pkg-path = "jq"
-jq.pkg-group = "utils"
-
 yq.pkg-path = "yq-go"
-yq.pkg-group = "utils"
-
 git.pkg-path = "git"
-git.pkg-group = "utils"
-
 curl.pkg-path = "curl"
-curl.pkg-group = "utils"
-
 op.pkg-path = "_1password-cli"
-op.pkg-group = "utils"
-
 gum.pkg-path = "gum"
-gum.pkg-group = "utils"
-kustomize.pkg-path = "kustomize"
 
 [vars]
-# Project metadata
 PROJECT_NAME = "external-dns-nextdns-webhook"
 VERSION = "dev"
 BINARY_NAME = "webhook"
-
-# Go environment
 GO111MODULE = "on"
 CGO_ENABLED = "0"
-
-# Default log level
 LOG_LEVEL = "info"
-
-# Docker image name
 DOCKER_IMAGE = "external-dns-nextdns-webhook"
-
-# Kind cluster name (matches ctlptl config)
 KIND_CLUSTER_NAME = "kind-external-dns-dev"
 
 [hook]
 on-activate = '''
-# Workaround for glibc TLS race condition (BZ #19329) in GitHub Actions
-# Flox's LD_AUDIT causes "Inconsistency detected by ld.so: dl-tls.c" errors
-# when Go toolchain dynamically loads libraries. Fixed in Flox v1.4.1 for some
-# programs, but still affects Go. See: https://github.com/flox/flox/issues/1341
+# Workaround for glibc TLS race condition in GitHub Actions
 unset LD_AUDIT
 
 setup_go_deps() {
@@ -106,75 +62,37 @@ setup_go_deps() {
 }
 
 setup_kubectl_context() {
-  # Set kubectl context to kind cluster if it exists
   if kind get clusters 2>/dev/null | grep -q "^${KIND_CLUSTER_NAME}$"; then
     kubectl config use-context "${KIND_CLUSTER_NAME}" >/dev/null 2>&1
   fi
 }
 
-# Set up Go cache within Flox environment for isolation
 export GOENV="${FLOX_ENV_CACHE:-/tmp}/goenv"
 export GOCACHE="${FLOX_ENV_CACHE:-/tmp}/go-build"
 export GOMODCACHE="${FLOX_ENV_CACHE:-/tmp}/go/pkg/mod"
 mkdir -p "$GOENV" "$GOCACHE" "$GOMODCACHE"
 
-# Run setup functions
 setup_go_deps
 setup_kubectl_context
-
-# Return to project directory
 cd "$FLOX_ENV_PROJECT"
 '''
 
 [services.dev]
 command = """
-set -e  # Exit on error
+set -e
 cd "$FLOX_ENV_PROJECT"
 
-# Cleanup function to run on exit
 cleanup() {
-  echo ""
-  echo "🛑 Cleaning up development environment..."
-
-  # Stop tilt resources
+  echo "Cleaning up development environment..."
   tilt down 2>/dev/null || true
-
-  # Delete kind cluster completely
-  echo "🗑️  Deleting kind cluster..."
   ctlptl delete cluster kind-external-dns-dev 2>/dev/null || true
-
-  echo "✅ Development environment cleaned up"
 }
 
-# Register cleanup function to run on exit
 trap cleanup EXIT INT TERM
 
-echo "🚀 Starting development environment..."
-echo ""
-
-# Set kubeconfig explicitly for the service
 export KUBECONFIG="$HOME/.kube/config"
-
-# Create/ensure cluster exists with ctlptl
-echo "🎡 Creating kind cluster with ctlptl..."
 ctlptl apply -f ctlptl-config.yaml
-
-# Set kubectl context
-echo "🔧 Setting kubectl context..."
 kubectl config use-context "${KIND_CLUSTER_NAME}"
-
-# Wait for cluster to be fully ready
-echo "⏳ Waiting for cluster to be ready..."
 kubectl wait --for=condition=Ready nodes --all --timeout=90s
-
-echo "✅ Kind cluster ready!"
-echo ""
-echo "🎨 Starting Tilt..."
-
-# Start tilt in foreground (cleanup will run on exit via trap)
 tilt up --host 0.0.0.0 --port 10350
 """
-
-# [profile] section is for shell-specific functions and aliases
-# Use [profile.common] for all shells, [profile.bash] for bash-specific, etc.
-# For different environment variants, create separate flox environments or use layering

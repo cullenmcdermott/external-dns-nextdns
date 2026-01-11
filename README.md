@@ -4,16 +4,22 @@ A webhook provider for [external-dns](https://github.com/kubernetes-sigs/externa
 
 ## Status
 
-✅ **NO-OP PROVIDER READY** - The service structure is complete and deployable. Currently implements a no-op provider (logs operations without making actual API calls). See [IMPLEMENTATION_PLAN.md](./IMPLEMENTATION_PLAN.md) for the roadmap to full implementation.
+**FULLY FUNCTIONAL** - The provider is complete and ready for production use. It includes:
+- Full NextDNS API integration for DNS record management
+- Per-record overwrite control via Kubernetes annotations
+- Automatic retry with exponential backoff for transient API errors
+- Enhanced dry-run mode with detailed change preview
+- Comprehensive logging for all operations
 
 ## Features
 
 - **Webhook Architecture**: Follows the external-dns webhook provider standard (2025)
 - **DNS Rewrite Management**: Uses NextDNS DNS Rewrites API for dynamic DNS management
-- **Smart Overwrite Protection**: Warns before overwriting existing records (configurable)
+- **Per-Record Overwrite Protection**: Control overwrites on a per-Ingress basis using annotations
+- **Automatic Retry**: Handles transient API errors with exponential backoff (3 retries: 1s, 2s, 4s delays)
 - **Supported Record Types**: A, AAAA, and CNAME records
 - **Domain Filtering**: Optional domain filtering for multi-tenant environments
-- **Dry Run Mode**: Test changes without applying them
+- **Enhanced Dry Run Mode**: Preview mode shows detailed diffs of planned changes
 - **Cloud Native**: Designed to run as a sidecar container in Kubernetes
 
 ## Architecture
@@ -21,11 +27,11 @@ A webhook provider for [external-dns](https://github.com/kubernetes-sigs/externa
 This provider implements the external-dns webhook interface as a separate HTTP service:
 
 ```
-┌─────────────────┐         ┌──────────────────────┐         ┌─────────────┐
-│                 │ HTTP    │  NextDNS Webhook     │  API    │             │
-│  External-DNS   │────────▶│  Provider            │────────▶│  NextDNS    │
-│                 │         │  (This Project)      │         │  API        │
-└─────────────────┘         └──────────────────────┘         └─────────────┘
++-----------------+         +----------------------+         +-------------+
+|                 | HTTP    |  NextDNS Webhook     |  API    |             |
+|  External-DNS   |-------->|  Provider            |-------->|  NextDNS    |
+|                 |         |  (This Project)      |         |  API        |
++-----------------+         +----------------------+         +-------------+
 ```
 
 ## Prerequisites
@@ -52,8 +58,7 @@ The provider is configured via environment variables:
 |----------|---------|-------------|
 | `SERVER_PORT` | `8888` | Port for webhook API (should be localhost only) |
 | `HEALTH_PORT` | `8080` | Port for health checks (exposed externally) |
-| `DRY_RUN` | `false` | If true, log changes without applying them |
-| `ALLOW_OVERWRITE` | `false` | If false, warn before overwriting existing records |
+| `DRY_RUN` | `false` | If true, preview changes without applying them |
 | `LOG_LEVEL` | `info` | Log level (trace, debug, info, warn, error) |
 | `DOMAIN_FILTER` | `` | Comma-separated list of domains to manage |
 | `SUPPORTED_RECORDS` | `A,AAAA,CNAME` | Comma-separated list of supported record types |
@@ -163,17 +168,84 @@ See [deploy/kubernetes/README.md](./deploy/kubernetes/README.md) for detailed de
 3. This provider translates changes to **NextDNS Rewrites API** calls
 4. NextDNS updates DNS records in your profile
 
-### Overwrite Protection
+### Per-Record Overwrite Protection
 
-When `ALLOW_OVERWRITE=false` (default):
+By default, the provider will **not overwrite existing DNS records**. This protects against accidentally overwriting important records.
+
+To allow overwriting an existing record, add the following annotation to your Ingress or Service:
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: my-ingress
+  annotations:
+    external-dns.alpha.kubernetes.io/nextdns-allow-overwrite: "true"
+spec:
+  rules:
+    - host: app.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: my-service
+                port:
+                  number: 80
+```
+
+**Annotation Details:**
+- **Key**: `external-dns.alpha.kubernetes.io/nextdns-allow-overwrite`
+- **Value**: `"true"` (case-insensitive) to allow overwrite
+- **Default**: If annotation is absent or set to `"false"`, overwrite is blocked
+
+When an overwrite is blocked, a warning is logged:
 
 ```
-⚠️  WARNING: Record already exists
+WARNING: Record already exists and will NOT be overwritten.
     DNS Name: app.example.com
-    Current:  A -> 192.168.1.100
-    Planned:  A -> 192.168.1.200
-    Set ALLOW_OVERWRITE=true to enable automatic overwrites
+    Record Type: A
+    Current Value: 192.168.1.100
+    Planned Value: 192.168.1.200
+    To allow overwrite, add annotation: external-dns.alpha.kubernetes.io/nextdns-allow-overwrite: "true"
 ```
+
+### Automatic Retry with Exponential Backoff
+
+The provider automatically retries failed API calls for transient errors:
+
+- **Retry attempts**: 3 (plus initial attempt = 4 total attempts)
+- **Backoff delays**: 1 second, 2 seconds, 4 seconds
+- **Maximum total delay**: ~7 seconds
+
+**Retried errors:**
+- Network timeouts
+- Server errors (500, 502, 503, 504)
+- Rate limit errors (429)
+
+**Not retried (fail immediately):**
+- Client errors (400 Bad Request, 401 Unauthorized, 403 Forbidden, 404 Not Found)
+
+### Enhanced Dry-Run Mode
+
+When `DRY_RUN=true`, the provider enters preview mode:
+
+1. Fetches current DNS records from NextDNS (read-only API call)
+2. Compares current state with planned changes
+3. Logs detailed diff for each operation:
+
+```
+=== DRY RUN PREVIEW ===
+INFO Would create record  action=CREATE dns_name=new.example.com record_type=A target=1.2.3.4
+INFO Would update record  action=UPDATE dns_name=existing.example.com current=10.0.0.1 planned=10.0.0.2
+INFO Would delete record  action=DELETE dns_name=old.example.com record_type=A target=192.168.1.99
+=== END DRY RUN PREVIEW ===
+```
+
+For conflicting creates (record already exists), the preview also shows overwrite protection status:
+- `overwrite="allowed (annotation present)"` - Will overwrite
+- `overwrite="blocked (annotation not present)"` - Will skip
 
 ### Supported Record Types
 
@@ -263,6 +335,7 @@ just version            # Show version info
 ├── internal/
 │   └── nextdns/          # NextDNS provider implementation
 │       ├── config.go     # Configuration management
+│       ├── client.go     # NextDNS API client with retry logic
 │       └── provider.go   # Provider interface implementation
 ├── pkg/
 │   └── webhook/          # HTTP server implementation
