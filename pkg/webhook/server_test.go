@@ -8,10 +8,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cullenmcdermott/external-dns-nextdns-webhook/internal/nextdns"
 	"sigs.k8s.io/external-dns/endpoint"
 	"sigs.k8s.io/external-dns/plan"
 	"sigs.k8s.io/external-dns/provider"
+
+	"github.com/cullenmcdermott/external-dns-nextdns-webhook/internal/nextdns"
 )
 
 // mockProvider implements the provider.Provider interface for testing
@@ -106,7 +107,7 @@ func TestHealthEndpoint(t *testing.T) {
 	server.handleHealth(w, req)
 
 	resp := w.Result()
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		t.Errorf("handleHealth() status = %v, want %v", resp.StatusCode, http.StatusOK)
@@ -143,7 +144,7 @@ func TestReadyEndpoint(t *testing.T) {
 	server.handleReady(w, req)
 
 	resp := w.Result()
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		t.Errorf("handleReady() status = %v, want %v", resp.StatusCode, http.StatusOK)
@@ -190,7 +191,7 @@ func TestServerShutdown(t *testing.T) {
 	if err != nil {
 		t.Logf("Health check failed (server might not be started yet): %v", err)
 	} else {
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 		if resp.StatusCode != http.StatusOK {
 			t.Errorf("Health check status = %v, want %v", resp.StatusCode, http.StatusOK)
 		}

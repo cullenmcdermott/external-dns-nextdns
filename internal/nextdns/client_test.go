@@ -84,22 +84,6 @@ func TestClientFields(t *testing.T) {
 	}
 }
 
-// Mock NextDNS client for testing
-type mockNextDNSClient struct {
-	rewrites  []*nextdns.Rewrites
-	listErr   error
-	createID  string
-	createErr error
-	deleteErr error
-}
-
-func (m *mockNextDNSClient) ListRewrites(ctx context.Context) ([]*nextdns.Rewrites, error) {
-	if m.listErr != nil {
-		return nil, m.listErr
-	}
-	return m.rewrites, nil
-}
-
 func TestFindRewriteByName(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -163,40 +147,16 @@ func TestFindRewriteByName(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Create a client (we'll override the API calls)
-			client, err := NewClient("test-key", "test-profile", "https://api.nextdns.io")
-			if err != nil {
-				t.Fatalf("NewClient() failed: %v", err)
-			}
-
-			// Create a mock API that returns our test rewrites
-			// Note: This is a simplified test - in production we'd use a proper mock library
-			// For now, we'll test the logic by directly calling the method
-			// which internally calls ListRewrites
-
-			// We need to test the FindRewriteByName logic, but it calls ListRewrites
-			// which makes a real API call. For a complete test, we'd need to mock
-			// the nextdns.Client interface. For now, we'll skip the actual API test
-			// and document that integration tests should cover this.
-
-			// This test demonstrates the test structure, but would need mocking
-			// to actually run without hitting the real API
+			// This test would require mocking the NextDNS API client.
+			// For now, we skip and document that integration tests should cover this.
+			// The test structure is kept for future implementation with proper mocking.
 			t.Skip("Skipping test that requires API mocking - covered by integration tests")
 
-			ctx := context.Background()
-			gotRewrite, gotFound, err := client.FindRewriteByName(ctx, tt.searchName, tt.searchType)
-			if err != nil {
-				t.Errorf("FindRewriteByName() error = %v", err)
-				return
-			}
-
-			if gotFound != tt.wantFound {
-				t.Errorf("FindRewriteByName() found = %v, want %v", gotFound, tt.wantFound)
-			}
-
-			if tt.wantFound && gotRewrite.ID != tt.wantRewrite.ID {
-				t.Errorf("FindRewriteByName() rewrite.ID = %v, want %v", gotRewrite.ID, tt.wantRewrite.ID)
-			}
+			// When mocking is implemented, this test would:
+			// 1. Create a mock client that returns tt.rewrites
+			// 2. Call FindRewriteByName with tt.searchName and tt.searchType
+			// 3. Verify the result matches tt.wantFound and tt.wantRewrite
+			_ = tt // use tt to avoid unused variable warning
 		})
 	}
 }

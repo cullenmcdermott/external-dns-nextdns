@@ -3,13 +3,13 @@ package nextdns
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"net"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/amalucelli/nextdns-go/nextdns"
-	log "github.com/sirupsen/logrus"
 )
 
 // Retry configuration constants
@@ -56,10 +56,9 @@ func NewClient(apiKey, profileID, baseURL string) (*Client, error) {
 		profileID: profileID,
 	}
 
-	log.WithFields(log.Fields{
-		"profile_id": profileID,
-		"base_url":   baseURL,
-	}).Debug("NextDNS client created successfully")
+	slog.Debug("NextDNS client created successfully",
+		"profile_id", profileID,
+		"base_url", baseURL)
 
 	return client, nil
 }
@@ -160,10 +159,9 @@ func retryWithBackoff(ctx context.Context, operation func() error, operationName
 		if err == nil {
 			// Success
 			if attempt > 0 {
-				log.WithFields(log.Fields{
-					"operation": operationName,
-					"attempt":   attempt + 1,
-				}).Debug("Operation succeeded after retry")
+				slog.Debug("Operation succeeded after retry",
+					"operation", operationName,
+					"attempt", attempt+1)
 			}
 			return nil
 		}
@@ -172,10 +170,9 @@ func retryWithBackoff(ctx context.Context, operation func() error, operationName
 
 		// Check if error is retryable
 		if !isRetryableError(err) {
-			log.WithFields(log.Fields{
-				"operation": operationName,
-				"error":     err.Error(),
-			}).Debug("Non-retryable error encountered, failing immediately")
+			slog.Debug("Non-retryable error encountered, failing immediately",
+				"operation", operationName,
+				"error", err.Error())
 			return err
 		}
 
@@ -187,12 +184,11 @@ func retryWithBackoff(ctx context.Context, operation func() error, operationName
 		// Get delay for this attempt
 		delay := retryDelays[attempt]
 
-		log.WithFields(log.Fields{
-			"operation": operationName,
-			"attempt":   attempt + 1,
-			"error":     err.Error(),
-			"delay":     delay.String(),
-		}).Debug("Retryable error encountered, will retry after delay")
+		slog.Debug("Retryable error encountered, will retry after delay",
+			"operation", operationName,
+			"attempt", attempt+1,
+			"error", err.Error(),
+			"delay", delay.String())
 
 		// Wait with context cancellation support
 		select {
@@ -204,18 +200,17 @@ func retryWithBackoff(ctx context.Context, operation func() error, operationName
 	}
 
 	// All retries exhausted
-	log.WithFields(log.Fields{
-		"operation":    operationName,
-		"max_attempts": maxRetryAttempts + 1,
-		"error":        lastErr.Error(),
-	}).Warn("All retry attempts exhausted")
+	slog.Warn("All retry attempts exhausted",
+		"operation", operationName,
+		"max_attempts", maxRetryAttempts+1,
+		"error", lastErr.Error())
 
 	return lastErr
 }
 
 // TestConnection verifies that the client can communicate with the NextDNS API
 func (c *Client) TestConnection(ctx context.Context) error {
-	log.Debug("Testing connection to NextDNS API")
+	slog.Debug("Testing connection to NextDNS API")
 
 	// Try to list rewrites as a connection test
 	_, err := c.ListRewrites(ctx)
@@ -223,14 +218,14 @@ func (c *Client) TestConnection(ctx context.Context) error {
 		return fmt.Errorf("connection test failed: %w", err)
 	}
 
-	log.Info("Successfully connected to NextDNS API")
+	slog.Info("Successfully connected to NextDNS API")
 	return nil
 }
 
 // ListRewrites fetches all DNS rewrites for the configured profile
 // This method includes automatic retry with exponential backoff for transient errors
 func (c *Client) ListRewrites(ctx context.Context) ([]*nextdns.Rewrites, error) {
-	log.WithField("profile_id", c.profileID).Debug("Listing DNS rewrites")
+	slog.Debug("Listing DNS rewrites", "profile_id", c.profileID)
 
 	var rewrites []*nextdns.Rewrites
 
@@ -248,10 +243,9 @@ func (c *Client) ListRewrites(ctx context.Context) ([]*nextdns.Rewrites, error) 
 		return nil, fmt.Errorf("failed to list rewrites: %w", err)
 	}
 
-	log.WithFields(log.Fields{
-		"profile_id": c.profileID,
-		"count":      len(rewrites),
-	}).Debug("Successfully listed DNS rewrites")
+	slog.Debug("Successfully listed DNS rewrites",
+		"profile_id", c.profileID,
+		"count", len(rewrites))
 
 	return rewrites, nil
 }
@@ -259,11 +253,10 @@ func (c *Client) ListRewrites(ctx context.Context) ([]*nextdns.Rewrites, error) 
 // CreateRewrite creates a new DNS rewrite record
 // This method includes automatic retry with exponential backoff for transient errors
 func (c *Client) CreateRewrite(ctx context.Context, name, recordType, content string) (string, error) {
-	log.WithFields(log.Fields{
-		"name":    name,
-		"type":    recordType,
-		"content": content,
-	}).Debug("Creating DNS rewrite")
+	slog.Debug("Creating DNS rewrite",
+		"name", name,
+		"type", recordType,
+		"content", content)
 
 	var id string
 
@@ -287,12 +280,11 @@ func (c *Client) CreateRewrite(ctx context.Context, name, recordType, content st
 		return "", fmt.Errorf("failed to create rewrite: %w", err)
 	}
 
-	log.WithFields(log.Fields{
-		"id":      id,
-		"name":    name,
-		"type":    recordType,
-		"content": content,
-	}).Info("Successfully created DNS rewrite")
+	slog.Info("Successfully created DNS rewrite",
+		"id", id,
+		"name", name,
+		"type", recordType,
+		"content", content)
 
 	return id, nil
 }
@@ -300,7 +292,7 @@ func (c *Client) CreateRewrite(ctx context.Context, name, recordType, content st
 // DeleteRewrite deletes a DNS rewrite record by ID
 // This method includes automatic retry with exponential backoff for transient errors
 func (c *Client) DeleteRewrite(ctx context.Context, id string) error {
-	log.WithField("id", id).Debug("Deleting DNS rewrite")
+	slog.Debug("Deleting DNS rewrite", "id", id)
 
 	err := retryWithBackoff(ctx, func() error {
 		request := &nextdns.DeleteRewritesRequest{
@@ -315,17 +307,16 @@ func (c *Client) DeleteRewrite(ctx context.Context, id string) error {
 		return fmt.Errorf("failed to delete rewrite: %w", err)
 	}
 
-	log.WithField("id", id).Info("Successfully deleted DNS rewrite")
+	slog.Info("Successfully deleted DNS rewrite", "id", id)
 	return nil
 }
 
 // FindRewriteByName finds a DNS rewrite by its name and type
 // Returns the rewrite and true if found, nil and false if not found
 func (c *Client) FindRewriteByName(ctx context.Context, name, recordType string) (*nextdns.Rewrites, bool, error) {
-	log.WithFields(log.Fields{
-		"name": name,
-		"type": recordType,
-	}).Debug("Finding DNS rewrite by name")
+	slog.Debug("Finding DNS rewrite by name",
+		"name", name,
+		"type", recordType)
 
 	rewrites, err := c.ListRewrites(ctx)
 	if err != nil {
@@ -334,20 +325,18 @@ func (c *Client) FindRewriteByName(ctx context.Context, name, recordType string)
 
 	for _, rewrite := range rewrites {
 		if rewrite.Name == name && rewrite.Type == recordType {
-			log.WithFields(log.Fields{
-				"id":      rewrite.ID,
-				"name":    rewrite.Name,
-				"type":    rewrite.Type,
-				"content": rewrite.Content,
-			}).Debug("Found matching DNS rewrite")
+			slog.Debug("Found matching DNS rewrite",
+				"id", rewrite.ID,
+				"name", rewrite.Name,
+				"type", rewrite.Type,
+				"content", rewrite.Content)
 			return rewrite, true, nil
 		}
 	}
 
-	log.WithFields(log.Fields{
-		"name": name,
-		"type": recordType,
-	}).Debug("No matching DNS rewrite found")
+	slog.Debug("No matching DNS rewrite found",
+		"name", name,
+		"type", recordType)
 
 	return nil, false, nil
 }
@@ -356,12 +345,11 @@ func (c *Client) FindRewriteByName(ctx context.Context, name, recordType string)
 // NextDNS API does not have a native update endpoint, so we use delete + create
 // Note: Both DeleteRewrite and CreateRewrite have their own retry logic
 func (c *Client) UpdateRewrite(ctx context.Context, id, name, recordType, content string) (string, error) {
-	log.WithFields(log.Fields{
-		"id":          id,
-		"name":        name,
-		"type":        recordType,
-		"new_content": content,
-	}).Debug("Updating DNS rewrite")
+	slog.Debug("Updating DNS rewrite",
+		"id", id,
+		"name", name,
+		"type", recordType,
+		"new_content", content)
 
 	// Delete the old rewrite
 	if err := c.DeleteRewrite(ctx, id); err != nil {
@@ -374,11 +362,10 @@ func (c *Client) UpdateRewrite(ctx context.Context, id, name, recordType, conten
 		return "", fmt.Errorf("failed to create new rewrite during update: %w", err)
 	}
 
-	log.WithFields(log.Fields{
-		"old_id": id,
-		"new_id": newID,
-		"name":   name,
-	}).Info("Successfully updated DNS rewrite")
+	slog.Info("Successfully updated DNS rewrite",
+		"old_id", id,
+		"new_id", newID,
+		"name", name)
 
 	return newID, nil
 }

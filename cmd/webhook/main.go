@@ -3,13 +3,13 @@ package main
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
 
 	"github.com/cullenmcdermott/external-dns-nextdns-webhook/internal/nextdns"
 	"github.com/cullenmcdermott/external-dns-nextdns-webhook/pkg/webhook"
-	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -29,34 +29,35 @@ func main() {
 
 	config, err := nextdns.LoadConfig()
 	if err != nil {
-		log.Fatalf("Failed to load configuration: %v", err)
+		slog.Error("Failed to load configuration", "error", err)
+		os.Exit(1)
 	}
 
 	// Set log level
+	var level slog.Level
 	if config.LogLevel != "" {
-		level, err := log.ParseLevel(config.LogLevel)
-		if err != nil {
-			log.Warnf("Invalid log level '%s', using 'info'", config.LogLevel)
-			level = log.InfoLevel
+		if err := level.UnmarshalText([]byte(config.LogLevel)); err != nil {
+			slog.Warn("Invalid log level, using 'info'", "level", config.LogLevel)
+			level = slog.LevelInfo
 		}
-		log.SetLevel(level)
 	}
+	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: level})))
 
-	log.Info("Starting NextDNS webhook provider")
-	log.Infof("API port: %d", config.ServerPort)
-	log.Infof("Health port: %d", config.HealthPort)
-	log.Infof("Dry run: %v", config.DryRun)
+	slog.Info("Starting NextDNS webhook provider")
+	slog.Info("Configuration", "api_port", config.ServerPort, "health_port", config.HealthPort, "dry_run", config.DryRun)
 
 	// Create NextDNS provider
 	provider, err := nextdns.NewProvider(config)
 	if err != nil {
-		log.Fatalf("Failed to create NextDNS provider: %v", err)
+		slog.Error("Failed to create NextDNS provider", "error", err)
+		os.Exit(1)
 	}
 
 	// Create and start the webhook server
 	srv, err := webhook.NewServer(config, provider)
 	if err != nil {
-		log.Fatalf("Failed to create webhook server: %v", err)
+		slog.Error("Failed to create webhook server", "error", err)
+		os.Exit(1)
 	}
 
 	// Setup signal handling for graceful shutdown
@@ -68,14 +69,15 @@ func main() {
 
 	go func() {
 		<-sigChan
-		log.Info("Received shutdown signal, gracefully shutting down...")
+		slog.Info("Received shutdown signal, gracefully shutting down...")
 		cancel()
 	}()
 
 	// Start the server
 	if err := srv.Start(ctx); err != nil {
-		log.Fatalf("Server failed: %v", err)
+		slog.Error("Server failed", "error", err)
+		os.Exit(1)
 	}
 
-	log.Info("Server stopped")
+	slog.Info("Server stopped")
 }

@@ -136,6 +136,20 @@ When `DRY_RUN=true`:
 
 ## 🔨 Development Guidelines
 
+### Tool Installation
+
+**IMPORTANT**: Always use `flox` to install development tools. Never use `go install` or other package managers directly.
+
+```bash
+# Correct - use flox
+flox install <package-name>
+
+# Wrong - don't use go install directly
+go install golang.org/x/tools/cmd/goimports@latest  # DON'T DO THIS
+```
+
+All development tools should be managed through the Flox environment to ensure consistency across sessions.
+
 ### Adding New Features
 
 1. **Check IMPLEMENTATION_PLAN.md** for planned approach
@@ -147,17 +161,16 @@ When `DRY_RUN=true`:
 
 ### Code Style
 
-- Use `logrus` for logging (already imported)
+- Use `log/slog` for logging (Go standard library)
 - Follow Go conventions (gofmt, golint)
 - Add godoc comments for exported functions
-- Use structured logging with fields
+- Use structured logging with key-value pairs
 
 **Example**:
 ```go
-log.WithFields(log.Fields{
-    "dns_name": ep.DNSName,
-    "record_type": ep.RecordType,
-}).Info("Creating DNS record")
+slog.Info("Creating DNS record",
+    "dns_name", ep.DNSName,
+    "record_type", ep.RecordType)
 ```
 
 ### Error Handling
@@ -254,7 +267,7 @@ if err != nil {
   - `AdjustEndpoints()` with record type and domain filtering
   - `GetDomainFilter()` implementation
   - Dry-run mode with comprehensive logging
-  - Structured logging with logrus
+  - Structured logging with slog (Go standard library)
 - ✅ HTTP server skeleton created (`pkg/webhook/server.go`)
   - Webhook API server on port 8888 (localhost only for security)
   - Health check server on port 8080 (exposed for Kubernetes probes)

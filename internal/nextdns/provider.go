@@ -3,9 +3,9 @@ package nextdns
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
 	"sigs.k8s.io/external-dns/endpoint"
 	"sigs.k8s.io/external-dns/plan"
 	"sigs.k8s.io/external-dns/provider"
@@ -40,28 +40,25 @@ func NewProvider(config *Config) (*Provider, error) {
 		client: client,
 	}
 
-	log.WithFields(log.Fields{
-		"profile_id": config.ProfileID,
-		"base_url":   config.BaseURL,
-		"dry_run":    config.DryRun,
-	}).Info("NextDNS provider initialized")
+	slog.Info("NextDNS provider initialized",
+		"profile_id", config.ProfileID,
+		"base_url", config.BaseURL,
+		"dry_run", config.DryRun)
 
 	// Test connection if not in dry-run mode
 	if !config.DryRun {
 		ctx := context.Background()
 		if err := client.TestConnection(ctx); err != nil {
-			log.WithError(err).Warn("Failed to connect to NextDNS API - provider will continue but may fail on actual operations")
+			slog.Warn("Failed to connect to NextDNS API - provider will continue but may fail on actual operations", "error", err)
 			// Don't return error here - allow provider to start even if connection test fails
 			// This is useful for scenarios where API might be temporarily unavailable
 		} else {
-			log.WithFields(log.Fields{
-				"profile_id": config.ProfileID,
-			}).Info("NextDNS connection verified - successfully authenticated with NextDNS API")
+			slog.Info("NextDNS connection verified - successfully authenticated with NextDNS API",
+				"profile_id", config.ProfileID)
 		}
 	} else {
-		log.WithFields(log.Fields{
-			"profile_id": config.ProfileID,
-		}).Info("Dry-run mode enabled - skipping NextDNS API connection test")
+		slog.Info("Dry-run mode enabled - skipping NextDNS API connection test",
+			"profile_id", config.ProfileID)
 	}
 
 	return p, nil
@@ -69,7 +66,7 @@ func NewProvider(config *Config) (*Provider, error) {
 
 // Records returns the list of DNS records from NextDNS
 func (p *Provider) Records(ctx context.Context) ([]*endpoint.Endpoint, error) {
-	log.Debug("Fetching records from NextDNS")
+	slog.Debug("Fetching records from NextDNS")
 
 	// Handle nil client (e.g., in tests)
 	if p.client == nil {
@@ -93,20 +90,19 @@ func (p *Provider) Records(ctx context.Context) ([]*endpoint.Endpoint, error) {
 		endpoints = append(endpoints, ep)
 	}
 
-	log.WithField("count", len(endpoints)).Info("Records fetched from NextDNS")
+	slog.Info("Records fetched from NextDNS", "count", len(endpoints))
 	return endpoints, nil
 }
 
 // ApplyChanges applies the given changes to NextDNS
 func (p *Provider) ApplyChanges(ctx context.Context, changes *plan.Changes) error {
-	log.WithFields(log.Fields{
-		"create": len(changes.Create),
-		"update": len(changes.UpdateOld),
-		"delete": len(changes.Delete),
-	}).Info("Applying changes to NextDNS")
+	slog.Info("Applying changes to NextDNS",
+		"create", len(changes.Create),
+		"update", len(changes.UpdateOld),
+		"delete", len(changes.Delete))
 
 	if p.config.DryRun {
-		log.Info("Dry run mode enabled, changes will not be applied")
+		slog.Info("Dry run mode enabled, changes will not be applied")
 		p.logChanges(ctx, changes)
 		return nil
 	}
@@ -134,33 +130,33 @@ func (p *Provider) ApplyChanges(ctx context.Context, changes *plan.Changes) erro
 		}
 	}
 
-	log.Info("Successfully applied changes to NextDNS")
+	slog.Info("Successfully applied changes to NextDNS")
 	return nil
 }
 
 // AdjustEndpoints modifies endpoints before they are processed
 func (p *Provider) AdjustEndpoints(endpoints []*endpoint.Endpoint) ([]*endpoint.Endpoint, error) {
-	log.Debugf("Adjusting %d endpoints", len(endpoints))
+	slog.Debug("Adjusting endpoints", "count", len(endpoints))
 
 	adjusted := make([]*endpoint.Endpoint, 0, len(endpoints))
 
 	for _, ep := range endpoints {
 		// Filter by supported record types
 		if !p.isSupportedRecordType(ep.RecordType) {
-			log.Warnf("Skipping unsupported record type %s for %s", ep.RecordType, ep.DNSName)
+			slog.Warn("Skipping unsupported record type", "record_type", ep.RecordType, "dns_name", ep.DNSName)
 			continue
 		}
 
 		// Apply domain filtering if configured
 		if len(p.config.DomainFilter) > 0 && !p.matchesDomainFilter(ep.DNSName) {
-			log.Debugf("Skipping %s as it doesn't match domain filter", ep.DNSName)
+			slog.Debug("Skipping endpoint - doesn't match domain filter", "dns_name", ep.DNSName)
 			continue
 		}
 
 		adjusted = append(adjusted, ep)
 	}
 
-	log.Debugf("Adjusted to %d endpoints", len(adjusted))
+	slog.Debug("Adjusted endpoints", "count", len(adjusted))
 	return adjusted, nil
 }
 
@@ -204,21 +200,19 @@ func parseOverwriteAnnotation(ep *endpoint.Endpoint) bool {
 	for _, prop := range ep.ProviderSpecific {
 		if prop.Name == overwriteAnnotationKey {
 			allowed := strings.EqualFold(prop.Value, "true")
-			log.WithFields(log.Fields{
-				"dns_name":          ep.DNSName,
-				"annotation_key":    overwriteAnnotationKey,
-				"annotation_value":  prop.Value,
-				"overwrite_allowed": allowed,
-			}).Debug("Parsed overwrite annotation")
+			slog.Debug("Parsed overwrite annotation",
+				"dns_name", ep.DNSName,
+				"annotation_key", overwriteAnnotationKey,
+				"annotation_value", prop.Value,
+				"overwrite_allowed", allowed)
 			return allowed
 		}
 	}
 
-	log.WithFields(log.Fields{
-		"dns_name":          ep.DNSName,
-		"annotation_key":    overwriteAnnotationKey,
-		"overwrite_allowed": false,
-	}).Debug("Overwrite annotation not present, defaulting to block overwrite")
+	slog.Debug("Overwrite annotation not present, defaulting to block overwrite",
+		"dns_name", ep.DNSName,
+		"annotation_key", overwriteAnnotationKey,
+		"overwrite_allowed", false)
 	return false
 }
 
@@ -226,18 +220,16 @@ func parseOverwriteAnnotation(ep *endpoint.Endpoint) bool {
 func (p *Provider) createRecord(ctx context.Context, ep *endpoint.Endpoint) error {
 	// Skip unsupported record types (e.g., TXT records used by external-dns registry)
 	if !p.isSupportedRecordType(ep.RecordType) {
-		log.WithFields(log.Fields{
-			"name": ep.DNSName,
-			"type": ep.RecordType,
-		}).Debug("Skipping unsupported record type")
+		slog.Debug("Skipping unsupported record type",
+			"name", ep.DNSName,
+			"type", ep.RecordType)
 		return nil
 	}
 
-	log.WithFields(log.Fields{
-		"name":   ep.DNSName,
-		"type":   ep.RecordType,
-		"target": ep.Targets,
-	}).Info("Creating record")
+	slog.Info("Creating record",
+		"name", ep.DNSName,
+		"type", ep.RecordType,
+		"target", ep.Targets)
 
 	// Handle multiple targets (create one rewrite per target)
 	for _, target := range ep.Targets {
@@ -251,24 +243,20 @@ func (p *Provider) createRecord(ctx context.Context, ep *endpoint.Endpoint) erro
 			// Record exists - check overwrite policy via annotation
 			if !parseOverwriteAnnotation(ep) {
 				// Emit warning and skip
-				log.WithFields(log.Fields{
-					"dns_name":      ep.DNSName,
-					"record_type":   ep.RecordType,
-					"current_value": existing.Content,
-					"planned_value": target,
-				}).Warn("Record already exists and will NOT be overwritten. " +
-					"To allow overwrite, add annotation: " +
-					overwriteAnnotationKey + ": \"true\"")
+				slog.Warn("Record already exists and will NOT be overwritten. To allow overwrite, add annotation: "+overwriteAnnotationKey+": \"true\"",
+					"dns_name", ep.DNSName,
+					"record_type", ep.RecordType,
+					"current_value", existing.Content,
+					"planned_value", target)
 				continue
 			}
 
 			// Overwrite is allowed via annotation - update the record
-			log.WithFields(log.Fields{
-				"dns_name":    ep.DNSName,
-				"record_type": ep.RecordType,
-				"old_value":   existing.Content,
-				"new_value":   target,
-			}).Info("Overwriting existing record (annotation allows overwrite)")
+			slog.Info("Overwriting existing record (annotation allows overwrite)",
+				"dns_name", ep.DNSName,
+				"record_type", ep.RecordType,
+				"old_value", existing.Content,
+				"new_value", target)
 
 			_, err = p.client.UpdateRewrite(ctx, existing.ID, ep.DNSName, ep.RecordType, target)
 			if err != nil {
@@ -290,60 +278,54 @@ func (p *Provider) createRecord(ctx context.Context, ep *endpoint.Endpoint) erro
 func (p *Provider) updateRecord(ctx context.Context, oldEp, newEp *endpoint.Endpoint) error {
 	// Skip unsupported record types
 	if !p.isSupportedRecordType(oldEp.RecordType) {
-		log.WithFields(log.Fields{
-			"name": oldEp.DNSName,
-			"type": oldEp.RecordType,
-		}).Debug("Skipping update for unsupported record type")
+		slog.Debug("Skipping update for unsupported record type",
+			"name", oldEp.DNSName,
+			"type", oldEp.RecordType)
 		return nil
 	}
 
-	log.WithFields(log.Fields{
-		"operation":  "update",
-		"dns_name":   oldEp.DNSName,
-		"old_target": oldEp.Targets,
-		"new_target": newEp.Targets,
-	}).Info("Updating record")
+	slog.Info("Updating record",
+		"operation", "update",
+		"dns_name", oldEp.DNSName,
+		"old_target", oldEp.Targets,
+		"new_target", newEp.Targets)
 
 	// NextDNS doesn't have a native update API - we use delete + create pattern
 	// First, delete the old record
 	if err := p.deleteRecord(ctx, oldEp); err != nil {
-		log.WithFields(log.Fields{
-			"operation":   "update",
-			"phase":       "delete",
-			"dns_name":    oldEp.DNSName,
-			"record_type": oldEp.RecordType,
-			"old_target":  oldEp.Targets,
-			"error":       err.Error(),
-		}).Error("Failed to delete old record during update")
+		slog.Error("Failed to delete old record during update",
+			"operation", "update",
+			"phase", "delete",
+			"dns_name", oldEp.DNSName,
+			"record_type", oldEp.RecordType,
+			"old_target", oldEp.Targets,
+			"error", err.Error())
 		return fmt.Errorf("failed to delete old record during update: %w", err)
 	}
 
 	// Then create the new record
 	if err := p.createRecord(ctx, newEp); err != nil {
-		log.WithFields(log.Fields{
-			"operation":   "update",
-			"phase":       "create",
-			"dns_name":    newEp.DNSName,
-			"record_type": newEp.RecordType,
-			"old_target":  oldEp.Targets,
-			"new_target":  newEp.Targets,
-			"error":       err.Error(),
-		}).Error("Failed to create new record during update")
-		log.WithFields(log.Fields{
-			"dns_name":   newEp.DNSName,
-			"old_target": oldEp.Targets,
-			"new_target": newEp.Targets,
-		}).Warn("DNS record is in inconsistent state - old record deleted but new record not created")
+		slog.Error("Failed to create new record during update",
+			"operation", "update",
+			"phase", "create",
+			"dns_name", newEp.DNSName,
+			"record_type", newEp.RecordType,
+			"old_target", oldEp.Targets,
+			"new_target", newEp.Targets,
+			"error", err.Error())
+		slog.Warn("DNS record is in inconsistent state - old record deleted but new record not created",
+			"dns_name", newEp.DNSName,
+			"old_target", oldEp.Targets,
+			"new_target", newEp.Targets)
 		return fmt.Errorf("failed to create new record during update: %w", err)
 	}
 
-	log.WithFields(log.Fields{
-		"operation":   "update",
-		"dns_name":    newEp.DNSName,
-		"record_type": newEp.RecordType,
-		"old_target":  oldEp.Targets,
-		"new_target":  newEp.Targets,
-	}).Info("Successfully updated record")
+	slog.Info("Successfully updated record",
+		"operation", "update",
+		"dns_name", newEp.DNSName,
+		"record_type", newEp.RecordType,
+		"old_target", oldEp.Targets,
+		"new_target", newEp.Targets)
 
 	return nil
 }
@@ -352,18 +334,16 @@ func (p *Provider) updateRecord(ctx context.Context, oldEp, newEp *endpoint.Endp
 func (p *Provider) deleteRecord(ctx context.Context, ep *endpoint.Endpoint) error {
 	// Skip unsupported record types
 	if !p.isSupportedRecordType(ep.RecordType) {
-		log.WithFields(log.Fields{
-			"name": ep.DNSName,
-			"type": ep.RecordType,
-		}).Debug("Skipping delete for unsupported record type")
+		slog.Debug("Skipping delete for unsupported record type",
+			"name", ep.DNSName,
+			"type", ep.RecordType)
 		return nil
 	}
 
-	log.WithFields(log.Fields{
-		"name":   ep.DNSName,
-		"type":   ep.RecordType,
-		"target": ep.Targets,
-	}).Info("Deleting record")
+	slog.Info("Deleting record",
+		"name", ep.DNSName,
+		"type", ep.RecordType,
+		"target", ep.Targets)
 
 	// Handle nil client (e.g., in tests)
 	if p.client == nil {
@@ -380,11 +360,10 @@ func (p *Provider) deleteRecord(ctx context.Context, ep *endpoint.Endpoint) erro
 
 		if !found {
 			// Record doesn't exist - log warning but don't fail (idempotency)
-			log.WithFields(log.Fields{
-				"dns_name":    ep.DNSName,
-				"record_type": ep.RecordType,
-				"target":      target,
-			}).Warn("Record not found for deletion, may have already been deleted")
+			slog.Warn("Record not found for deletion, may have already been deleted",
+				"dns_name", ep.DNSName,
+				"record_type", ep.RecordType,
+				"target", target)
 			continue
 		}
 
@@ -394,11 +373,10 @@ func (p *Provider) deleteRecord(ctx context.Context, ep *endpoint.Endpoint) erro
 			return fmt.Errorf("failed to delete record: %w", err)
 		}
 
-		log.WithFields(log.Fields{
-			"id":          existing.ID,
-			"dns_name":    ep.DNSName,
-			"record_type": ep.RecordType,
-		}).Info("Successfully deleted record")
+		slog.Info("Successfully deleted record",
+			"id", existing.ID,
+			"dns_name", ep.DNSName,
+			"record_type", ep.RecordType)
 	}
 
 	return nil
@@ -409,7 +387,7 @@ func (p *Provider) logChanges(ctx context.Context, changes *plan.Changes) {
 	// Fetch current records for comparison
 	currentRecords, err := p.Records(ctx)
 	if err != nil {
-		log.WithError(err).Warn("Failed to fetch current records for dry-run comparison")
+		slog.Warn("Failed to fetch current records for dry-run comparison", "error", err)
 		currentRecords = []*endpoint.Endpoint{}
 	}
 
@@ -420,51 +398,48 @@ func (p *Provider) logChanges(ctx context.Context, changes *plan.Changes) {
 		currentByName[key] = ep
 	}
 
-	log.Info("=== DRY RUN PREVIEW ===")
+	slog.Info("=== DRY RUN PREVIEW ===")
 
 	for _, ep := range changes.Create {
 		key := fmt.Sprintf("%s/%s", ep.DNSName, ep.RecordType)
 		current, exists := currentByName[key]
 
-		fields := log.Fields{
-			"action":      "CREATE",
-			"dns_name":    ep.DNSName,
-			"record_type": ep.RecordType,
-			"target":      ep.Targets,
+		args := []any{
+			"action", "CREATE",
+			"dns_name", ep.DNSName,
+			"record_type", ep.RecordType,
+			"target", ep.Targets,
 		}
 
 		if exists {
-			fields["current_value"] = current.Targets
-			fields["conflict"] = true
+			args = append(args, "current_value", current.Targets, "conflict", true)
 			if parseOverwriteAnnotation(ep) {
-				fields["overwrite"] = "allowed (annotation present)"
+				args = append(args, "overwrite", "allowed (annotation present)")
 			} else {
-				fields["overwrite"] = "blocked (annotation not present)"
+				args = append(args, "overwrite", "blocked (annotation not present)")
 			}
 		}
-		log.WithFields(fields).Info("Would create record")
+		slog.Info("Would create record", args...)
 	}
 
 	for i := range changes.UpdateOld {
 		oldEp := changes.UpdateOld[i]
 		newEp := changes.UpdateNew[i]
-		log.WithFields(log.Fields{
-			"action":      "UPDATE",
-			"dns_name":    oldEp.DNSName,
-			"record_type": oldEp.RecordType,
-			"current":     oldEp.Targets,
-			"planned":     newEp.Targets,
-		}).Info("Would update record")
+		slog.Info("Would update record",
+			"action", "UPDATE",
+			"dns_name", oldEp.DNSName,
+			"record_type", oldEp.RecordType,
+			"current", oldEp.Targets,
+			"planned", newEp.Targets)
 	}
 
 	for _, ep := range changes.Delete {
-		log.WithFields(log.Fields{
-			"action":      "DELETE",
-			"dns_name":    ep.DNSName,
-			"record_type": ep.RecordType,
-			"target":      ep.Targets,
-		}).Info("Would delete record")
+		slog.Info("Would delete record",
+			"action", "DELETE",
+			"dns_name", ep.DNSName,
+			"record_type", ep.RecordType,
+			"target", ep.Targets)
 	}
 
-	log.Info("=== END DRY RUN PREVIEW ===")
+	slog.Info("=== END DRY RUN PREVIEW ===")
 }

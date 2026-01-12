@@ -3,13 +3,14 @@ package webhook
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"time"
 
-	"github.com/cullenmcdermott/external-dns-nextdns-webhook/internal/nextdns"
-	log "github.com/sirupsen/logrus"
 	"sigs.k8s.io/external-dns/provider"
 	"sigs.k8s.io/external-dns/provider/webhook/api"
+
+	"github.com/cullenmcdermott/external-dns-nextdns-webhook/internal/nextdns"
 )
 
 const (
@@ -83,14 +84,14 @@ func (s *Server) Start(ctx context.Context) error {
 	healthErrChan := make(chan error, 1)
 
 	go func() {
-		log.Infof("Starting API server on %s", s.apiServer.Addr)
+		slog.Info("Starting API server", "addr", s.apiServer.Addr)
 		if err := s.apiServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			apiErrChan <- err
 		}
 	}()
 
 	go func() {
-		log.Infof("Starting health server on %s", s.healthServer.Addr)
+		slog.Info("Starting health server", "addr", s.healthServer.Addr)
 		if err := s.healthServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			healthErrChan <- err
 		}
@@ -99,7 +100,7 @@ func (s *Server) Start(ctx context.Context) error {
 	// Wait for context cancellation or server error
 	select {
 	case <-ctx.Done():
-		log.Info("Shutting down servers...")
+		slog.Info("Shutting down servers...")
 		return s.shutdown()
 	case err := <-apiErrChan:
 		return fmt.Errorf("API server error: %w", err)
@@ -134,14 +135,14 @@ func (s *Server) shutdown() error {
 }
 
 // handleHealth handles health check requests
-func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleHealth(w http.ResponseWriter, _ *http.Request) {
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("OK"))
+	_, _ = w.Write([]byte("OK"))
 }
 
 // handleReady handles readiness check requests
-func (s *Server) handleReady(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleReady(w http.ResponseWriter, _ *http.Request) {
 	// TODO: Add actual readiness checks (e.g., can connect to NextDNS API)
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("Ready"))
+	_, _ = w.Write([]byte("Ready"))
 }
