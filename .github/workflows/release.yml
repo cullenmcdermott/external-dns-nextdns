@@ -30,6 +30,7 @@ jobs:
             --registry-address=ghcr.io
             --registry-username=${{ github.actor }}
             --registry-password=env:GITHUB_TOKEN
+          cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -39,6 +40,7 @@ jobs:
           version: "latest"
           verb: "call"
           args: "changelog --source=. export --path=CHANGELOG.md"
+          cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
         continue-on-error: true
 
       - name: Create GitHub Release
