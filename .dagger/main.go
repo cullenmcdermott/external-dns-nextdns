@@ -22,7 +22,7 @@ func (m *ExternalDnsNextdns) goBase(source *dagger.Directory) *dagger.Container 
 	goBuildCache := dag.CacheVolume("go-build-cache")
 
 	return dag.Container().
-		From("golang:1.25-alpine").
+		From("golang:1.25").
 		WithMountedCache("/go/pkg/mod", goModCache).
 		WithMountedCache("/root/.cache/go-build", goBuildCache).
 		WithEnvVariable("CGO_ENABLED", "0").
@@ -53,7 +53,7 @@ func (m *ExternalDnsNextdns) Lint(ctx context.Context, source *dagger.Directory)
 	lintCache := dag.CacheVolume("golangci-lint-cache")
 
 	_, err := dag.Container().
-		From("golangci/golangci-lint:v1.64-alpine").
+		From("golangci/golangci-lint:v2.8.0-alpine").
 		WithMountedCache("/go/pkg/mod", goModCache).
 		WithMountedCache("/root/.cache/go-build", goBuildCache).
 		WithMountedCache("/root/.cache/golangci-lint", lintCache).
