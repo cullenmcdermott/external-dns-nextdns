@@ -19,8 +19,8 @@ const overwriteAnnotationKey = "external-dns.alpha.kubernetes.io/nextdns-allow-o
 // Provider implements the external-dns provider interface for NextDNS
 type Provider struct {
 	provider.BaseProvider
-	config         *Config
-	client         *Client
+	config          *Config
+	client          *Client
 	discoveredNames map[string]bool // DNS names discovered from k8s resources
 }
 
