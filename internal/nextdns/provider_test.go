@@ -334,24 +334,6 @@ func TestGetDomainFilter(t *testing.T) {
 	}
 }
 
-func TestRecords_NilClient(t *testing.T) {
-	provider := &Provider{
-		config: &Config{
-			APIKey:    "test-key",
-			ProfileID: "test-profile",
-			DryRun:    true,
-		},
-		// client is nil
-	}
-
-	// Records() should return an error when client is nil
-	ctx := context.Background()
-	_, err := provider.Records(ctx)
-	if err == nil {
-		t.Error("Records() expected error with nil client, got nil")
-	}
-}
-
 func TestApplyChanges_DryRun(t *testing.T) {
 	provider := &Provider{
 		config: &Config{
@@ -677,43 +659,6 @@ func TestDryRunWithConflict(t *testing.T) {
 	}
 }
 
-// TestUpdateRecordLogging tests that updateRecord logs appropriately for different scenarios
-// This is Task 3.1 from the spec - test update failure logging
-func TestUpdateRecordLogging(t *testing.T) {
-	// Test that updateRecord with valid endpoints doesn't panic
-	// Full failure testing requires mock client implementation
-	provider := &Provider{
-		config: &Config{
-			APIKey:           "test-key",
-			ProfileID:        "test-profile",
-			DryRun:           false,
-			SupportedRecords: []string{"A", "AAAA", "CNAME"},
-		},
-		// client is nil - this will cause deleteRecord to fail, testing the error path
-	}
-
-	oldEp := &endpoint.Endpoint{
-		DNSName:    "update.example.com",
-		RecordType: "A",
-		Targets:    []string{"192.168.1.100"},
-	}
-	newEp := &endpoint.Endpoint{
-		DNSName:    "update.example.com",
-		RecordType: "A",
-		Targets:    []string{"192.168.1.200"},
-	}
-
-	ctx := context.Background()
-	err := provider.updateRecord(ctx, oldEp, newEp)
-
-	// We expect an error because client is nil, but the test verifies:
-	// 1. The method doesn't panic
-	// 2. Error is returned (not swallowed)
-	if err == nil {
-		t.Error("updateRecord() expected error with nil client, got nil")
-	}
-}
-
 // =============================================================================
 // Task Group 4 Tests: Integration and Backward Compatibility
 // =============================================================================
@@ -733,7 +678,6 @@ func TestConfigBackwardCompatibility_NoAllowOverwrite(t *testing.T) {
 		DryRun:           false,
 		LogLevel:         "info",
 		SupportedRecords: []string{"A", "AAAA", "CNAME"},
-		DefaultTTL:       300,
 	}
 
 	// Verify config is valid (no AllowOverwrite field needed)
@@ -820,38 +764,6 @@ func TestApplyChanges_BackwardCompatibility(t *testing.T) {
 	// In dry-run mode, ApplyChanges should succeed without errors
 	if err != nil {
 		t.Errorf("ApplyChanges() backward compatibility test failed with error = %v", err)
-	}
-}
-
-// TestRecordsMethod_BackwardCompatibility verifies that Records() method
-// still has the expected signature and behavior.
-// This is Task 4.5 - verify backward compatibility.
-func TestRecordsMethod_BackwardCompatibility(t *testing.T) {
-	provider := &Provider{
-		config: &Config{
-			APIKey:           "test-key",
-			ProfileID:        "test-profile",
-			DryRun:           true,
-			SupportedRecords: []string{"A", "AAAA", "CNAME"},
-		},
-		// client is nil - should return error, not panic
-	}
-
-	ctx := context.Background()
-	endpoints, err := provider.Records(ctx)
-
-	// Verify the method returns the expected types
-	if err == nil {
-		// If no error, endpoints should be a valid slice
-		if endpoints == nil {
-			t.Error("Records() should return non-nil slice when successful")
-		}
-	} else {
-		// Error case is expected with nil client
-		// Verify it doesn't panic and returns proper error
-		if endpoints != nil {
-			t.Error("Records() should return nil endpoints when error occurs")
-		}
 	}
 }
 

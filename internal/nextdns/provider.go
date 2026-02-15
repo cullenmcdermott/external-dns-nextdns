@@ -69,11 +69,6 @@ func NewProvider(config *Config) (*Provider, error) {
 func (p *Provider) Records(ctx context.Context) ([]*endpoint.Endpoint, error) {
 	slog.Debug("Fetching records from NextDNS")
 
-	// Handle nil client (e.g., in tests)
-	if p.client == nil {
-		return nil, fmt.Errorf("client not initialized")
-	}
-
 	// Fetch all rewrites from NextDNS API
 	rewrites, err := p.client.ListRewrites(ctx)
 	if err != nil {
@@ -219,20 +214,10 @@ func parseOverwriteAnnotation(ep *endpoint.Endpoint) bool {
 
 	for _, prop := range ep.ProviderSpecific {
 		if prop.Name == overwriteAnnotationKey {
-			allowed := strings.EqualFold(prop.Value, "true")
-			slog.Debug("Parsed overwrite annotation",
-				"dns_name", ep.DNSName,
-				"annotation_key", overwriteAnnotationKey,
-				"annotation_value", prop.Value,
-				"overwrite_allowed", allowed)
-			return allowed
+			return strings.EqualFold(prop.Value, "true")
 		}
 	}
 
-	slog.Debug("Overwrite annotation not present, defaulting to block overwrite",
-		"dns_name", ep.DNSName,
-		"annotation_key", overwriteAnnotationKey,
-		"overwrite_allowed", false)
 	return false
 }
 
@@ -313,26 +298,11 @@ func (p *Provider) updateRecord(ctx context.Context, oldEp, newEp *endpoint.Endp
 	// NextDNS doesn't have a native update API - we use delete + create pattern
 	// First, delete the old record
 	if err := p.deleteRecord(ctx, oldEp); err != nil {
-		slog.Error("Failed to delete old record during update",
-			"operation", "update",
-			"phase", "delete",
-			"dns_name", oldEp.DNSName,
-			"record_type", oldEp.RecordType,
-			"old_target", oldEp.Targets,
-			"error", err.Error())
 		return fmt.Errorf("failed to delete old record during update: %w", err)
 	}
 
 	// Then create the new record
 	if err := p.createRecord(ctx, newEp); err != nil {
-		slog.Error("Failed to create new record during update",
-			"operation", "update",
-			"phase", "create",
-			"dns_name", newEp.DNSName,
-			"record_type", newEp.RecordType,
-			"old_target", oldEp.Targets,
-			"new_target", newEp.Targets,
-			"error", err.Error())
 		slog.Warn("DNS record is in inconsistent state - old record deleted but new record not created",
 			"dns_name", newEp.DNSName,
 			"old_target", oldEp.Targets,
@@ -364,11 +334,6 @@ func (p *Provider) deleteRecord(ctx context.Context, ep *endpoint.Endpoint) erro
 		"name", ep.DNSName,
 		"type", ep.RecordType,
 		"target", ep.Targets)
-
-	// Handle nil client (e.g., in tests)
-	if p.client == nil {
-		return fmt.Errorf("client not initialized")
-	}
 
 	// Handle multiple targets (delete each matching rewrite)
 	for _, target := range ep.Targets {
@@ -404,11 +369,15 @@ func (p *Provider) deleteRecord(ctx context.Context, ep *endpoint.Endpoint) erro
 
 // logChanges logs the changes that would be applied (for dry-run mode)
 func (p *Provider) logChanges(ctx context.Context, changes *plan.Changes) {
-	// Fetch current records for comparison
-	currentRecords, err := p.Records(ctx)
-	if err != nil {
-		slog.Warn("Failed to fetch current records for dry-run comparison", "error", err)
-		currentRecords = []*endpoint.Endpoint{}
+	// Fetch current records for comparison (skip if client is unavailable)
+	var currentRecords []*endpoint.Endpoint
+	if p.client != nil {
+		var err error
+		currentRecords, err = p.Records(ctx)
+		if err != nil {
+			slog.Warn("Failed to fetch current records for dry-run comparison", "error", err)
+			currentRecords = []*endpoint.Endpoint{}
+		}
 	}
 
 	// Build lookup map for current records

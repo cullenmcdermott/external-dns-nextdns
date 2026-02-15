@@ -43,7 +43,6 @@ All configuration is through environment variables.
 | `LOG_LEVEL` | `info` | One of: trace, debug, info, warn, error |
 | `DOMAIN_FILTER` | | Comma-separated list of domains to manage |
 | `SUPPORTED_RECORDS` | `A,AAAA,CNAME` | Record types to handle |
-| `DEFAULT_TTL` | `300` | Default TTL in seconds |
 | `NEXTDNS_BASE_URL` | `https://api.nextdns.io` | API base URL |
 
 ## Installation

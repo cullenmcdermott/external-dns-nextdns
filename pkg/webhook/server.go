@@ -14,8 +14,7 @@ import (
 )
 
 const (
-	mediaTypeFormat = "application/external.dns.webhook+json;version=%d"
-	defaultTimeout  = 30 * time.Second
+	defaultTimeout = 30 * time.Second
 )
 
 // Server represents the webhook HTTP server
@@ -142,7 +141,6 @@ func (s *Server) handleHealth(w http.ResponseWriter, _ *http.Request) {
 
 // handleReady handles readiness check requests
 func (s *Server) handleReady(w http.ResponseWriter, _ *http.Request) {
-	// TODO: Add actual readiness checks (e.g., can connect to NextDNS API)
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte("Ready"))
 }

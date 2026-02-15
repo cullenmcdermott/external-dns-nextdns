@@ -78,8 +78,7 @@ func isRetryableError(err error) bool {
 	errStr := err.Error()
 
 	// Check for network timeout errors
-	var netErr net.Error
-	if ok := isNetError(err, &netErr); ok && netErr.Timeout() {
+	if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
 		return true
 	}
 
@@ -118,15 +117,6 @@ func isRetryableError(err error) bool {
 		}
 	}
 
-	return false
-}
-
-// isNetError attempts to extract a net.Error from the error chain
-func isNetError(err error, target *net.Error) bool {
-	if netErr, ok := err.(net.Error); ok {
-		*target = netErr
-		return true
-	}
 	return false
 }
 

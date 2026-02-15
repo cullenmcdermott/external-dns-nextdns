@@ -71,10 +71,8 @@ The webhook can be configured via the ConfigMap (`configmap.yaml`) or directly i
 | `SERVER_PORT` | 8888 | Webhook API port (internal) |
 | `HEALTH_PORT` | 8080 | Health check port |
 | `DRY_RUN` | false | If true, logs changes without applying them |
-| `ALLOW_OVERWRITE` | false | If true, allows overwriting existing DNS records |
 | `LOG_LEVEL` | info | Log level (debug, info, warn, error) |
 | `SUPPORTED_RECORDS` | A,AAAA,CNAME | Comma-separated list of supported record types |
-| `DEFAULT_TTL` | 300 | Default TTL for DNS records |
 | `DOMAIN_FILTER` | "" | Comma-separated list of domains to manage |
 
 ### Domain Filtering

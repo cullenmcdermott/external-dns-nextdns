@@ -12,12 +12,10 @@ data:
 
   # Behavior Configuration
   DRY_RUN: "false"
-  ALLOW_OVERWRITE: "false"
   LOG_LEVEL: "info"
 
   # DNS Record Configuration
   SUPPORTED_RECORDS: "A,AAAA,CNAME"
-  DEFAULT_TTL: "300"
 
   # NextDNS API Configuration
   NEXTDNS_BASE_URL: "https://api.nextdns.io"

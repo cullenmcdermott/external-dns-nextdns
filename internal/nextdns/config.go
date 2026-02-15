@@ -25,7 +25,6 @@ type Config struct {
 	DryRun           bool
 	LogLevel         string
 	SupportedRecords []string
-	DefaultTTL       int
 }
 
 // LoadConfig loads configuration from environment variables
@@ -39,7 +38,6 @@ func LoadConfig() (*Config, error) {
 		DryRun:           getEnvBool("DRY_RUN", false),
 		LogLevel:         getEnv("LOG_LEVEL", "info"),
 		SupportedRecords: getEnvList("SUPPORTED_RECORDS", []string{"A", "AAAA", "CNAME"}),
-		DefaultTTL:       getEnvInt("DEFAULT_TTL", 300),
 	}
 
 	// Domain filter

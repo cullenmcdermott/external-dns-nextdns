@@ -72,8 +72,6 @@ spec:
               value: "info"
             - name: DRY_RUN
               value: "false"
-            - name: ALLOW_OVERWRITE
-              value: "false"
           resources:
             requests:
               memory: "32Mi"
