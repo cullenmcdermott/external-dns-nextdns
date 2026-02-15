@@ -2,8 +2,10 @@
 
 An [external-dns](https://github.com/kubernetes-sigs/external-dns) webhook provider that manages DNS records through the [NextDNS](https://nextdns.io) Rewrites API.
 
-```
-External-DNS  --HTTP-->  This webhook  --API-->  NextDNS
+```mermaid
+graph LR
+    A[External-DNS] -->|HTTP| B[This webhook]
+    B -->|API| C[NextDNS]
 ```
 
 ## What it does
@@ -53,15 +55,6 @@ flox activate
 export NEXTDNS_API_KEY="your-api-key"
 export NEXTDNS_PROFILE_ID="your-profile-id"
 just build && just run
-```
-
-### Development (manual)
-
-```bash
-export NEXTDNS_API_KEY="your-api-key"
-export NEXTDNS_PROFILE_ID="your-profile-id"
-go build -o webhook ./cmd/webhook
-./webhook
 ```
 
 ### Docker
