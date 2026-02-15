@@ -19,8 +19,9 @@ const overwriteAnnotationKey = "external-dns.alpha.kubernetes.io/nextdns-allow-o
 // Provider implements the external-dns provider interface for NextDNS
 type Provider struct {
 	provider.BaseProvider
-	config *Config
-	client *Client
+	config         *Config
+	client         *Client
+	discoveredNames map[string]bool // DNS names discovered from k8s resources
 }
 
 // NewProvider creates a new NextDNS provider
@@ -91,6 +92,19 @@ func (p *Provider) Records(ctx context.Context) ([]*endpoint.Endpoint, error) {
 	}
 
 	slog.Info("Records fetched from NextDNS", "count", len(endpoints))
+
+	// Log unmanaged records (records in NextDNS that external-dns doesn't know about)
+	if p.discoveredNames != nil {
+		for _, ep := range endpoints {
+			if !p.discoveredNames[ep.DNSName] {
+				slog.Warn("Unmanaged DNS record found in NextDNS (no matching k8s resource)",
+					"dns_name", ep.DNSName,
+					"record_type", ep.RecordType,
+					"target", ep.Targets)
+			}
+		}
+	}
+
 	return endpoints, nil
 }
 
@@ -140,6 +154,9 @@ func (p *Provider) AdjustEndpoints(endpoints []*endpoint.Endpoint) ([]*endpoint.
 
 	adjusted := make([]*endpoint.Endpoint, 0, len(endpoints))
 
+	// Track all discovered DNS names from k8s resources
+	discovered := make(map[string]bool)
+
 	for _, ep := range endpoints {
 		// Filter by supported record types
 		if !p.isSupportedRecordType(ep.RecordType) {
@@ -153,8 +170,11 @@ func (p *Provider) AdjustEndpoints(endpoints []*endpoint.Endpoint) ([]*endpoint.
 			continue
 		}
 
+		discovered[ep.DNSName] = true
 		adjusted = append(adjusted, ep)
 	}
+
+	p.discoveredNames = discovered
 
 	slog.Debug("Adjusted endpoints", "count", len(adjusted))
 	return adjusted, nil
