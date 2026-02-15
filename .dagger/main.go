@@ -11,6 +11,8 @@ import (
 	"fmt"
 
 	"dagger/external-dns-nextdns/internal/dagger"
+
+	"golang.org/x/sync/errgroup"
 )
 
 // ExternalDnsNextdns provides CI/CD pipeline functions for the webhook
@@ -179,31 +181,49 @@ func (m *ExternalDnsNextdns) Changelog(
 		File("/src/CHANGELOG.md")
 }
 
-// CI runs the complete CI pipeline (lint, test, build, docker build)
-func (m *ExternalDnsNextdns) CI(ctx context.Context, source *dagger.Directory) error {
-	// Run lint
-	if err := m.Lint(ctx, source); err != nil {
-		return fmt.Errorf("lint failed: %w", err)
+// CI runs the complete CI pipeline (lint, test, build, docker build) in parallel
+// and returns the coverage file
+func (m *ExternalDnsNextdns) CI(ctx context.Context, source *dagger.Directory) (*dagger.File, error) {
+	g, ctx := errgroup.WithContext(ctx)
+
+	g.Go(func() error {
+		if err := m.Lint(ctx, source); err != nil {
+			return fmt.Errorf("lint failed: %w", err)
+		}
+		return nil
+	})
+
+	// Run tests with coverage instead of race detection in CI
+	coverageFile := m.goBase(source).
+		WithExec([]string{"go", "test", "-v", "-coverprofile=coverage.out", "./..."}).
+		File("/src/coverage.out")
+
+	g.Go(func() error {
+		if _, err := coverageFile.Sync(ctx); err != nil {
+			return fmt.Errorf("test failed: %w", err)
+		}
+		return nil
+	})
+
+	g.Go(func() error {
+		if _, err := m.Build(ctx, source, "dev").Sync(ctx); err != nil {
+			return fmt.Errorf("build failed: %w", err)
+		}
+		return nil
+	})
+
+	g.Go(func() error {
+		if _, err := m.BuildDocker(ctx, source, "dev").Sync(ctx); err != nil {
+			return fmt.Errorf("docker build failed: %w", err)
+		}
+		return nil
+	})
+
+	if err := g.Wait(); err != nil {
+		return nil, err
 	}
 
-	// Run tests
-	if _, err := m.Test(ctx, source); err != nil {
-		return fmt.Errorf("test failed: %w", err)
-	}
-
-	// Build binary
-	binary := m.Build(ctx, source, "dev")
-	if _, err := binary.Sync(ctx); err != nil {
-		return fmt.Errorf("build failed: %w", err)
-	}
-
-	// Build Docker image
-	container := m.BuildDocker(ctx, source, "dev")
-	if _, err := container.Sync(ctx); err != nil {
-		return fmt.Errorf("docker build failed: %w", err)
-	}
-
-	return nil
+	return coverageFile, nil
 }
 
 // Release runs the complete release pipeline (test, multi-platform build, publish)
