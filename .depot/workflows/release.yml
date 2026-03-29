@@ -1,0 +1,48 @@
+# Depot CI Migration
+# Source: .github/workflows/release.yml
+#
+# Changes made:
+# - Changed GitHub runs-on labels to their Depot equivalents
+
+name: Release
+on:
+  push:
+    tags:
+      - 'v*'
+permissions:
+  contents: write
+  packages: write
+jobs:
+  release:
+    name: Build and Release
+    runs-on: depot-ubuntu-latest # was: ubuntu-latest. Mapped standard GitHub runner to Depot equivalent.
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Run Dagger Release Pipeline
+        uses: dagger/dagger-for-github@v8.2.0
+        with:
+          version: "0.19.11"
+          verb: "call"
+          args: >-
+            release --source=. --version=${{ github.ref_name }} --registry-address=ghcr.io --registry-username=${{ github.actor }} --registry-password=env:GITHUB_TOKEN
+          cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Generate Changelog
+        uses: dagger/dagger-for-github@v8.2.0
+        with:
+          version: "0.19.11"
+          verb: "call"
+          args: "changelog --source=. export --path=CHANGELOG.md"
+          cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
+        continue-on-error: true
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: CHANGELOG.md
+          draft: false
+          prerelease: ${{ contains(github.ref, '-rc') || contains(github.ref, '-beta') || contains(github.ref, '-alpha') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
