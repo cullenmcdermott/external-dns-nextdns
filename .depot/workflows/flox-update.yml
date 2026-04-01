@@ -24,8 +24,8 @@ jobs:
         with:
           ref: main
       - name: Restore Nix cache
-        uses: actions/cache@v4
         id: nix-cache
+        uses: actions/cache/restore@v4
         with:
           path: /nix
           key: nix-${{ hashFiles('.flox/env/manifest.toml') }}
@@ -38,6 +38,12 @@ jobs:
         run: sudo systemctl start nix-daemon || sudo nix-daemon &
       - name: Activate Flox environment
         run: flox activate -- true
+      - name: Save Nix cache
+        if: always() && steps.nix-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: /nix
+          key: nix-${{ hashFiles('.flox/env/manifest.toml') }}
       - name: Update Flox packages
         id: update
         run: |

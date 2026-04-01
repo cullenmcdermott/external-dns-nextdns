@@ -23,8 +23,8 @@ jobs:
         with:
           fetch-depth: 0
       - name: Restore Nix cache
-        uses: actions/cache@v4
         id: nix-cache
+        uses: actions/cache/restore@v4
         with:
           path: /nix
           key: nix-${{ hashFiles('.flox/env/manifest.toml') }}
@@ -38,6 +38,12 @@ jobs:
       - name: Activate Flox environment
         run: |
           eval "$(flox activate)"
+      - name: Save Nix cache
+        if: always() && steps.nix-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: /nix
+          key: nix-${{ hashFiles('.flox/env/manifest.toml') }}
       - name: Run Dagger Release Pipeline
         run: |
           eval "$(flox activate)"

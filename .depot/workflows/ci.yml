@@ -21,8 +21,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Restore Nix cache
-        uses: actions/cache@v4
         id: nix-cache
+        uses: actions/cache/restore@v4
         with:
           path: /nix
           key: nix-${{ hashFiles('.flox/env/manifest.toml') }}
@@ -36,10 +36,17 @@ jobs:
       - name: Activate Flox environment
         run: |
           eval "$(flox activate)"
+      - name: Save Nix cache
+        if: always() && steps.nix-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: /nix
+          key: nix-${{ hashFiles('.flox/env/manifest.toml') }}
       - name: Run Dagger CI Pipeline
         run: |
           eval "$(flox activate)"
           dagger call ci --source=. export --path=coverage.out
+          echo "Dagger CI pipeline completed successfully"
         env:
           DAGGER_CLOUD_TOKEN: ${{ secrets.DAGGER_CLOUD_TOKEN }}
       - name: Upload Coverage to Codecov
