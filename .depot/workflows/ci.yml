@@ -36,12 +36,14 @@ jobs:
       - name: Activate Flox environment
         run: |
           eval "$(flox activate)"
-      - name: Save Nix cache
-        if: always() && steps.nix-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
+      - name: Restore Dagger engine cache
+        uses: actions/cache/restore@v4
+        id: dagger-cache
         with:
-          path: /nix
-          key: nix-${{ hashFiles('.flox/env/manifest.toml') }}
+          path: /var/lib/dagger
+          key: dagger-engine-${{ hashFiles('dagger.json') }}
+          restore-keys: |
+            dagger-engine-
       - name: Run Dagger CI Pipeline
         run: |
           eval "$(flox activate)"
@@ -55,3 +57,21 @@ jobs:
           files: coverage.out
           fail_ci_if_error: false
         continue-on-error: true
+      - name: Fix Nix permissions for caching
+        if: always() && steps.nix-cache.outputs.cache-hit != 'true'
+        run: sudo chmod -R a+r /nix && sudo find /nix -type d -exec chmod a+rx {} +
+      - name: Save Nix cache
+        if: always() && steps.nix-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: /nix
+          key: nix-${{ hashFiles('.flox/env/manifest.toml') }}
+      - name: Fix Dagger permissions for caching
+        if: always() && steps.dagger-cache.outputs.cache-hit != 'true'
+        run: sudo chmod -R a+r /var/lib/dagger 2>/dev/null && sudo find /var/lib/dagger -type d -exec chmod a+rx {} + 2>/dev/null || true
+      - name: Save Dagger engine cache
+        if: always() && steps.dagger-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: /var/lib/dagger
+          key: dagger-engine-${{ hashFiles('dagger.json') }}

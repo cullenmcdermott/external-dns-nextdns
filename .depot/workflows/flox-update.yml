@@ -38,12 +38,6 @@ jobs:
         run: sudo systemctl start nix-daemon || sudo nix-daemon &
       - name: Activate Flox environment
         run: flox activate -- true
-      - name: Save Nix cache
-        if: always() && steps.nix-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
-        with:
-          path: /nix
-          key: nix-${{ hashFiles('.flox/env/manifest.toml') }}
       - name: Update Flox packages
         id: update
         run: |
@@ -102,3 +96,12 @@ jobs:
             flox
             automated
           draft: false
+      - name: Fix Nix permissions for caching
+        if: always() && steps.nix-cache.outputs.cache-hit != 'true'
+        run: sudo chmod -R a+r /nix && sudo find /nix -type d -exec chmod a+rx {} +
+      - name: Save Nix cache
+        if: always() && steps.nix-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: /nix
+          key: nix-${{ hashFiles('.flox/env/manifest.toml') }}
