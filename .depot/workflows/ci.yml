@@ -15,11 +15,30 @@ permissions:
 jobs:
   ci:
     name: CI Pipeline
-    runs-on: depot-ubuntu-latest,dagger=0.19.11
+    runs-on: depot-ubuntu-latest
+    env:
+      FLOX_DISABLE_METRICS: "true"
     steps:
       - uses: actions/checkout@v4
+      - name: Restore Nix cache
+        uses: actions/cache@v4
+        id: nix-cache
+        with:
+          path: /nix
+          key: nix-${{ hashFiles('.flox/env/manifest.toml') }}
+          restore-keys: |
+            nix-
+      - name: Install Flox
+        if: steps.nix-cache.outputs.cache-hit != 'true'
+        uses: flox/install-flox-action@v2
+      - name: Ensure nix-daemon is running
+        run: sudo systemctl start nix-daemon || sudo nix-daemon &
+      - name: Activate Flox environment
+        run: flox activate -- true
       - name: Run Dagger CI Pipeline
-        run: dagger call ci --source=. export --path=coverage.out
+        run: flox activate -- dagger call ci --source=. export --path=coverage.out
+        env:
+          DAGGER_CLOUD_TOKEN: ${{ secrets.DAGGER_CLOUD_TOKEN }}
       - name: Upload Coverage to Codecov
         uses: codecov/codecov-action@v4
         with:

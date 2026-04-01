@@ -15,14 +15,31 @@ permissions:
 jobs:
   release:
     name: Build and Release
-    runs-on: depot-ubuntu-latest,dagger=0.19.11
+    runs-on: depot-ubuntu-latest
+    env:
+      FLOX_DISABLE_METRICS: "true"
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Restore Nix cache
+        uses: actions/cache@v4
+        id: nix-cache
+        with:
+          path: /nix
+          key: nix-${{ hashFiles('.flox/env/manifest.toml') }}
+          restore-keys: |
+            nix-
+      - name: Install Flox
+        if: steps.nix-cache.outputs.cache-hit != 'true'
+        uses: flox/install-flox-action@v2
+      - name: Ensure nix-daemon is running
+        run: sudo systemctl start nix-daemon || sudo nix-daemon &
+      - name: Activate Flox environment
+        run: flox activate -- true
       - name: Run Dagger Release Pipeline
         run: >-
-          dagger call release
+          flox activate -- dagger call release
           --source=.
           --version=${{ github.ref_name }}
           --registry-address=ghcr.io
@@ -31,7 +48,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Generate Changelog
-        run: dagger call changelog --source=. export --path=CHANGELOG.md
+        run: flox activate -- dagger call changelog --source=. export --path=CHANGELOG.md
         continue-on-error: true
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
