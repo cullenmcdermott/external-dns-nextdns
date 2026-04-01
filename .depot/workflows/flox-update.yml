@@ -21,10 +21,21 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+      - name: Restore Nix cache
+        uses: actions/cache@v4
+        id: nix-cache
+        with:
+          path: /nix
+          key: nix-${{ hashFiles('.flox/env/manifest.toml') }}
+          restore-keys: |
+            nix-
       - name: Install Flox
+        if: steps.nix-cache.outputs.cache-hit != 'true'
         uses: flox/install-flox-action@v2
+      - name: Ensure nix-daemon is running
+        run: sudo systemctl start nix-daemon || sudo nix-daemon &
       - name: Activate Flox environment
-        run: flox activate
+        run: flox activate -- true
       - name: Update Flox packages
         id: update
         run: |
