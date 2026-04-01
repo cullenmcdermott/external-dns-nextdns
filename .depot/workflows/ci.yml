@@ -34,9 +34,12 @@ jobs:
       - name: Ensure nix-daemon is running
         run: sudo systemctl start nix-daemon || sudo nix-daemon &
       - name: Activate Flox environment
-        run: flox activate -- true
+        run: |
+          eval "$(flox activate)"
       - name: Run Dagger CI Pipeline
-        run: flox activate -- dagger call ci --source=. export --path=coverage.out
+        run: |
+          eval "$(flox activate)"
+          dagger call ci --source=. export --path=coverage.out
         env:
           DAGGER_CLOUD_TOKEN: ${{ secrets.DAGGER_CLOUD_TOKEN }}
       - name: Upload Coverage to Codecov

@@ -36,19 +36,23 @@ jobs:
       - name: Ensure nix-daemon is running
         run: sudo systemctl start nix-daemon || sudo nix-daemon &
       - name: Activate Flox environment
-        run: flox activate -- true
+        run: |
+          eval "$(flox activate)"
       - name: Run Dagger Release Pipeline
-        run: >-
-          flox activate -- dagger call release
-          --source=.
-          --version=${{ github.ref_name }}
-          --registry-address=ghcr.io
-          --registry-username=${{ github.actor }}
-          --registry-password=env:GITHUB_TOKEN
+        run: |
+          eval "$(flox activate)"
+          dagger call release \
+            --source=. \
+            --version=${{ github.ref_name }} \
+            --registry-address=ghcr.io \
+            --registry-username=${{ github.actor }} \
+            --registry-password=env:GITHUB_TOKEN
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Generate Changelog
-        run: flox activate -- dagger call changelog --source=. export --path=CHANGELOG.md
+        run: |
+          eval "$(flox activate)"
+          dagger call changelog --source=. export --path=CHANGELOG.md
         continue-on-error: true
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
