@@ -47,23 +47,60 @@ jobs:
         if: steps.flox-check.outputs.installed != 'true'
         uses: flox/install-flox-action@v2
 
+      - name: Nix store diagnostics
+        run: |
+          echo "=== Nix binary location ==="
+          which nix 2>/dev/null || echo "nix not on PATH"
+          ls -la /nix/var/nix/profiles/default/bin/nix 2>/dev/null || echo "no default profile nix"
+          ls -la /nix/var/nix/daemon-socket/ 2>/dev/null || echo "no daemon socket dir"
+          echo ""
+          echo "=== Nix DB present? ==="
+          ls -la /nix/var/nix/db/db.sqlite 2>/dev/null || echo "no nix db"
+          echo ""
+          echo "=== Store path count ==="
+          ls /nix/store/ 2>/dev/null | wc -l
+          echo ""
+          echo "=== Nix config ==="
+          cat /etc/nix/nix.conf 2>/dev/null || echo "no nix.conf"
+
       - name: Ensure nix-daemon is running
         run: |
-          if command -v systemctl &>/dev/null && systemctl is-system-running &>/dev/null; then
+          # Try systemd first, fall back to manual daemon
+          if command -v systemctl &>/dev/null && systemctl is-system-running &>/dev/null 2>&1; then
             sudo systemctl start nix-daemon
           else
+            sudo mkdir -p /nix/var/nix/daemon-socket
             sudo nix-daemon &
-            # Wait for the daemon socket to be ready
-            for i in $(seq 1 30); do
-              [ -S /nix/var/nix/daemon-socket/socket ] && break
-              sleep 0.1
-            done
           fi
-          # Verify the daemon is responding
-          nix store ping 2>/dev/null && echo "nix-daemon is ready" || echo "WARNING: nix-daemon may not be ready"
+          # Wait for the daemon to be responsive (up to 10s)
+          for i in $(seq 1 100); do
+            if nix --extra-experimental-features nix-command store ping &>/dev/null; then
+              echo "nix-daemon is ready (attempt $i)"
+              break
+            fi
+            sleep 0.1
+          done
+          # Final check
+          nix --extra-experimental-features nix-command store ping &>/dev/null || { echo "ERROR: nix-daemon failed to start"; exit 1; }
+
+      - name: Verify cached store paths
+        run: |
+          echo "=== Checking if key packages are in store ==="
+          for pkg in go golangci-lint 1password-cli git-cliff; do
+            path=$(ls -d /nix/store/*-${pkg}-* 2>/dev/null | head -1)
+            if [ -n "$path" ]; then
+              echo "FOUND: $path"
+              nix --extra-experimental-features nix-command path-info --offline "$path" 2>&1 && echo "  -> valid" || echo "  -> INVALID"
+            else
+              echo "MISSING: $pkg"
+            fi
+          done
 
       - name: Activate Flox environment (verbose)
-        run: flox activate -v -- true
+        run: |
+          echo "=== Starting flox activate at $(date -u +%Y-%m-%dT%H:%M:%S.%3NZ) ==="
+          time flox activate -vv -- true
+          echo "=== Finished flox activate at $(date -u +%Y-%m-%dT%H:%M:%S.%3NZ) ==="
 
       - name: Cache Go dependencies
         uses: actions/cache@v4
