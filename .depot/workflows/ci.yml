@@ -63,7 +63,6 @@ jobs:
         run: |
           . /home/runner/.nix-profile/etc/profile.d/nix.sh
           nix profile install \
-            --profile /nix/var/nix/profiles/default \
             --experimental-features "nix-command flakes" \
             --accept-flake-config \
             'github:flox/flox/v1.11.0'
