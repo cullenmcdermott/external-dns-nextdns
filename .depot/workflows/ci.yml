@@ -120,8 +120,11 @@ jobs:
       - name: Build
         run: flox activate -- go build -ldflags="-s -w -X main.Version=dev" -o webhook ./cmd/webhook
 
-      - name: Docker build
-        run: depot build --project "$DEPOT_PROJECT_ID" --platform linux/amd64 --build-arg VERSION=dev -t external-dns-nextdns-webhook:ci .
+      - uses: depot/setup-action@v1
+      - uses: depot/build-push-action@v1
+        with:
+          project: ms8q29bc5z
+          context: .
 
       - name: Fix Nix permissions for caching
         if: always()
