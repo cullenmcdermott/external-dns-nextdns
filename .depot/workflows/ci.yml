@@ -1,8 +1,5 @@
-# Depot CI Migration
-# Source: .github/workflows/ci.yml
-#
-# Changes made:
-# - Changed GitHub runs-on labels to their Depot equivalents
+# Depot CI workflow for external-dns-nextdns
+# Runs lint, test, build, and docker build using Flox environment
 
 name: CI
 on:
@@ -18,6 +15,9 @@ jobs:
     runs-on: depot-ubuntu-latest
     env:
       FLOX_DISABLE_METRICS: "true"
+      GOMODCACHE: /home/runner/.cache/go/pkg/mod
+      GOCACHE: /home/runner/.cache/go-build
+      GOLANGCI_LINT_CACHE: /home/runner/.cache/golangci-lint
     steps:
       - uses: actions/checkout@v4
       - name: Restore Nix cache
@@ -34,23 +34,25 @@ jobs:
       - name: Ensure nix-daemon is running
         run: sudo systemctl start nix-daemon || sudo nix-daemon &
       - name: Activate Flox environment
-        run: |
-          eval "$(flox activate)"
-      - name: Restore Dagger engine cache
-        uses: actions/cache/restore@v4
-        id: dagger-cache
+        run: flox activate -- true
+      - name: Restore Go caches
+        uses: actions/cache@v4
         with:
-          path: /var/lib/dagger
-          key: dagger-engine-${{ hashFiles('dagger.json') }}
+          path: |
+            /home/runner/.cache/go/pkg/mod
+            /home/runner/.cache/go-build
+            /home/runner/.cache/golangci-lint
+          key: go-${{ hashFiles('go.sum') }}
           restore-keys: |
-            dagger-engine-
-      - name: Run Dagger CI Pipeline
-        run: |
-          eval "$(flox activate)"
-          dagger call ci --source=. export --path=coverage.out
-          echo "Dagger CI pipeline completed successfully"
-        env:
-          DAGGER_CLOUD_TOKEN: ${{ secrets.DAGGER_CLOUD_TOKEN }}
+            go-
+      - name: Lint
+        run: flox activate -- golangci-lint run
+      - name: Test
+        run: flox activate -- go test -v -coverprofile=coverage.out ./...
+      - name: Build
+        run: flox activate -- go build -ldflags="-s -w -X main.Version=dev" -o webhook ./cmd/webhook
+      - name: Docker build
+        run: flox activate -- docker build -t external-dns-nextdns-webhook:ci .
       - name: Upload Coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
@@ -66,12 +68,3 @@ jobs:
         with:
           path: /nix
           key: nix-${{ hashFiles('.flox/env/manifest.toml') }}
-      - name: Fix Dagger permissions for caching
-        if: always() && steps.dagger-cache.outputs.cache-hit != 'true'
-        run: sudo chmod -R a+r /var/lib/dagger 2>/dev/null && sudo find /var/lib/dagger -type d -exec chmod a+rx {} + 2>/dev/null || true
-      - name: Save Dagger engine cache
-        if: always() && steps.dagger-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
-        with:
-          path: /var/lib/dagger
-          key: dagger-engine-${{ hashFiles('dagger.json') }}

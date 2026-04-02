@@ -1,8 +1,5 @@
-# Depot CI Migration
-# Source: .github/workflows/release.yml
-#
-# Changes made:
-# - Changed GitHub runs-on labels to their Depot equivalents
+# Depot CI workflow for releasing external-dns-nextdns
+# Builds multi-platform Docker images and publishes to GHCR
 
 name: Release
 on:
@@ -18,6 +15,8 @@ jobs:
     runs-on: depot-ubuntu-latest
     env:
       FLOX_DISABLE_METRICS: "true"
+      GOMODCACHE: /home/runner/.cache/go/pkg/mod
+      GOCACHE: /home/runner/.cache/go-build
     steps:
       - uses: actions/checkout@v4
         with:
@@ -36,31 +35,34 @@ jobs:
       - name: Ensure nix-daemon is running
         run: sudo systemctl start nix-daemon || sudo nix-daemon &
       - name: Activate Flox environment
-        run: |
-          eval "$(flox activate)"
-      - name: Restore Dagger engine cache
-        uses: actions/cache/restore@v4
-        id: dagger-cache
+        run: flox activate -- true
+      - name: Restore Go caches
+        uses: actions/cache@v4
         with:
-          path: /var/lib/dagger
-          key: dagger-engine-${{ hashFiles('dagger.json') }}
+          path: |
+            /home/runner/.cache/go/pkg/mod
+            /home/runner/.cache/go-build
+          key: go-${{ hashFiles('go.sum') }}
           restore-keys: |
-            dagger-engine-
-      - name: Run Dagger Release Pipeline
+            go-
+      - name: Test
+        run: flox activate -- go test -v -race ./...
+      - name: Log in to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+      - name: Set up Docker Buildx
+        run: docker buildx create --use
+      - name: Build and push multi-platform image
         run: |
-          eval "$(flox activate)"
-          dagger call release \
-            --source=. \
-            --version=${{ github.ref_name }} \
-            --registry-address=ghcr.io \
-            --registry-username=${{ github.actor }} \
-            --registry-password=env:GITHUB_TOKEN
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          IMAGE=ghcr.io/${{ github.actor }}/external-dns-nextdns-webhook
+          VERSION=${{ github.ref_name }}
+          flox activate -- docker buildx build \
+            --platform linux/amd64,linux/arm64 \
+            --build-arg VERSION=$VERSION \
+            -t $IMAGE:$VERSION \
+            -t $IMAGE:latest \
+            --push .
       - name: Generate Changelog
-        run: |
-          eval "$(flox activate)"
-          dagger call changelog --source=. export --path=CHANGELOG.md
+        run: flox activate -- git-cliff --config cliff.toml --latest --strip header -o CHANGELOG.md
         continue-on-error: true
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -79,12 +81,3 @@ jobs:
         with:
           path: /nix
           key: nix-${{ hashFiles('.flox/env/manifest.toml') }}
-      - name: Fix Dagger permissions for caching
-        if: always() && steps.dagger-cache.outputs.cache-hit != 'true'
-        run: sudo chmod -R a+r /var/lib/dagger 2>/dev/null && sudo find /var/lib/dagger -type d -exec chmod a+rx {} + 2>/dev/null || true
-      - name: Save Dagger engine cache
-        if: always() && steps.dagger-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
-        with:
-          path: /var/lib/dagger
-          key: dagger-engine-${{ hashFiles('dagger.json') }}
