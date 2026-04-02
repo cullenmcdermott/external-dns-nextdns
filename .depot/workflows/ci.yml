@@ -20,22 +20,40 @@ jobs:
       GOLANGCI_LINT_CACHE: /home/runner/.cache/golangci-lint
     steps:
       - uses: actions/checkout@v4
-      - name: Restore Nix cache
-        id: nix-cache
-        uses: actions/cache/restore@v4
+
+      - name: Cache Nix store
+        uses: actions/cache@v4
         with:
           path: /nix
           key: nix-${{ hashFiles('.flox/env/manifest.toml') }}
           restore-keys: |
             nix-
+
+      - name: Check for existing Flox installation
+        id: flox-check
+        run: |
+          if command -v flox &>/dev/null; then
+            echo "installed=true" >> "$GITHUB_OUTPUT"
+            echo "Flox already installed: $(flox --version)"
+          else
+            echo "installed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upgrade Flox
+        if: steps.flox-check.outputs.installed == 'true'
+        run: flox upgrade
+
       - name: Install Flox
-        if: steps.nix-cache.outputs.cache-hit != 'true'
+        if: steps.flox-check.outputs.installed != 'true'
         uses: flox/install-flox-action@v2
+
       - name: Ensure nix-daemon is running
         run: sudo systemctl start nix-daemon || sudo nix-daemon &
-      - name: Activate Flox environment
-        run: flox activate -- true
-      - name: Restore Go caches
+
+      - name: Activate Flox environment (verbose)
+        run: flox activate -vv -- true
+
+      - name: Cache Go dependencies
         uses: actions/cache@v4
         with:
           path: |
@@ -45,26 +63,19 @@ jobs:
           key: go-${{ hashFiles('go.sum') }}
           restore-keys: |
             go-
+
       - name: Lint
-        run: flox activate -- golangci-lint run
+        run: flox activate -- golangci-lint run --timeout 5m ./...
+
       - name: Test
-        run: flox activate -- go test -v -coverprofile=coverage.out ./...
+        run: flox activate -- go test -v -race ./...
+
       - name: Build
         run: flox activate -- go build -ldflags="-s -w -X main.Version=dev" -o webhook ./cmd/webhook
+
       - name: Docker build
         run: flox activate -- docker build -t external-dns-nextdns-webhook:ci .
-      - name: Upload Coverage to Codecov
-        uses: codecov/codecov-action@v4
-        with:
-          files: coverage.out
-          fail_ci_if_error: false
-        continue-on-error: true
+
       - name: Fix Nix permissions for caching
-        if: always() && steps.nix-cache.outputs.cache-hit != 'true'
+        if: always()
         run: sudo chmod -R a+r /nix && sudo find /nix -type d -exec chmod a+rx {} +
-      - name: Save Nix cache
-        if: always() && steps.nix-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
-        with:
-          path: /nix
-          key: nix-${{ hashFiles('.flox/env/manifest.toml') }}

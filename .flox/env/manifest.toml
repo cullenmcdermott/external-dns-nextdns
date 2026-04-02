@@ -66,9 +66,9 @@ setup_kubectl_context() {
   fi
 }
 
-export GOENV="${FLOX_ENV_CACHE:-/tmp}/goenv"
-export GOCACHE="${FLOX_ENV_CACHE:-/tmp}/go-build"
-export GOMODCACHE="${FLOX_ENV_CACHE:-/tmp}/go/pkg/mod"
+export GOENV="${GOENV:-${FLOX_ENV_CACHE:-/tmp}/goenv}"
+export GOCACHE="${GOCACHE:-${FLOX_ENV_CACHE:-/tmp}/go-build}"
+export GOMODCACHE="${GOMODCACHE:-${FLOX_ENV_CACHE:-/tmp}/go/pkg/mod}"
 mkdir -p "$GOENV" "$GOCACHE" "$GOMODCACHE"
 
 setup_go_deps

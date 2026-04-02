@@ -1,8 +1,4 @@
-# Depot CI Migration
-# Source: .github/workflows/flox-update.yml
-#
-# Changes made:
-# - Changed GitHub runs-on labels to their Depot equivalents
+# Depot workflow for updating Flox environment packages
 
 name: Update Flox Environment
 on:
@@ -15,7 +11,7 @@ permissions:
   pull-requests: write
 jobs:
   update-flox:
-    runs-on: depot-ubuntu-latest # was: ubuntu-latest. Mapped standard GitHub runner to Depot equivalent.
+    runs-on: depot-ubuntu-latest
     env:
       FLOX_DISABLE_METRICS: "true"
     steps:
@@ -23,21 +19,39 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: main
-      - name: Restore Nix cache
-        id: nix-cache
-        uses: actions/cache/restore@v4
+
+      - name: Cache Nix store
+        uses: actions/cache@v4
         with:
           path: /nix
           key: nix-${{ hashFiles('.flox/env/manifest.toml') }}
           restore-keys: |
             nix-
+
+      - name: Check for existing Flox installation
+        id: flox-check
+        run: |
+          if command -v flox &>/dev/null; then
+            echo "installed=true" >> "$GITHUB_OUTPUT"
+            echo "Flox already installed: $(flox --version)"
+          else
+            echo "installed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upgrade Flox
+        if: steps.flox-check.outputs.installed == 'true'
+        run: flox upgrade
+
       - name: Install Flox
-        if: steps.nix-cache.outputs.cache-hit != 'true'
+        if: steps.flox-check.outputs.installed != 'true'
         uses: flox/install-flox-action@v2
+
       - name: Ensure nix-daemon is running
         run: sudo systemctl start nix-daemon || sudo nix-daemon &
-      - name: Activate Flox environment
-        run: flox activate -- true
+
+      - name: Activate Flox environment (verbose)
+        run: flox activate -vv -- true
+
       - name: Update Flox packages
         id: update
         run: |
@@ -52,6 +66,7 @@ jobs:
             echo "updated=true" >> $GITHUB_OUTPUT
             echo "Flox packages were updated"
           fi
+
       - name: Create Pull Request
         if: steps.update.outputs.updated == 'true'
         uses: peter-evans/create-pull-request@v6
@@ -96,12 +111,7 @@ jobs:
             flox
             automated
           draft: false
+
       - name: Fix Nix permissions for caching
-        if: always() && steps.nix-cache.outputs.cache-hit != 'true'
+        if: always()
         run: sudo chmod -R a+r /nix && sudo find /nix -type d -exec chmod a+rx {} +
-      - name: Save Nix cache
-        if: always() && steps.nix-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
-        with:
-          path: /nix
-          key: nix-${{ hashFiles('.flox/env/manifest.toml') }}
