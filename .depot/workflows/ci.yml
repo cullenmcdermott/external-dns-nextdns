@@ -20,86 +20,33 @@ jobs:
       GOLANGCI_LINT_CACHE: /home/runner/.cache/golangci-lint
     steps:
       - uses: actions/checkout@v4
-
-      - name: Restore Nix cache
-        uses: actions/cache/restore@v4
+      - uses: nixbuild/nix-quick-install-action@v30
         with:
-          path: /nix
-          key: nix-${{ hashFiles('.flox/env/manifest.toml') }}-${{ github.run_id }}
-          restore-keys: |
-            nix-${{ hashFiles('.flox/env/manifest.toml') }}-
-            nix-
-
-      - name: Check for existing Flox installation
-        id: flox-check
-        run: |
-          if command -v flox &>/dev/null; then
-            echo "installed=true" >> "$GITHUB_OUTPUT"
-            echo "Flox already installed: $(flox --version)"
-          else
-            echo "installed=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Upgrade Flox
-        if: steps.flox-check.outputs.installed == 'true'
-        run: flox upgrade
-
-      - name: Install Flox
-        if: steps.flox-check.outputs.installed != 'true'
-        uses: flox/install-flox-action@v2
-
-      - name: Nix store diagnostics
-        run: |
-          echo "=== Nix binary location ==="
-          which nix 2>/dev/null || echo "nix not on PATH"
-          echo ""
-          echo "=== Nix DB ==="
-          ls -la /nix/var/nix/db/db.sqlite 2>/dev/null || echo "no nix db"
-          echo "DB size: $(stat -c%s /nix/var/nix/db/db.sqlite 2>/dev/null || echo 'N/A') bytes"
-          echo ""
-          echo "=== Store paths on disk vs in DB ==="
-          echo "Paths on disk: $(ls /nix/store/ 2>/dev/null | wc -l)"
-          echo "Valid paths in DB: $(nix --extra-experimental-features nix-command path-info --all 2>/dev/null | wc -l || echo 'cannot query')"
-
-      - name: Ensure nix-daemon is running
-        run: |
-          # Try systemd first, fall back to manual daemon
-          if command -v systemctl &>/dev/null && systemctl is-system-running &>/dev/null 2>&1; then
-            sudo systemctl start nix-daemon
-          else
-            sudo mkdir -p /nix/var/nix/daemon-socket
-            sudo nix-daemon &
-          fi
-          # Wait for the daemon to be responsive (up to 10s)
-          for i in $(seq 1 100); do
-            if nix --extra-experimental-features nix-command store ping &>/dev/null; then
-              echo "nix-daemon is ready (attempt $i)"
-              break
-            fi
-            sleep 0.1
-          done
-          # Final check
-          nix --extra-experimental-features nix-command store ping &>/dev/null || { echo "ERROR: nix-daemon failed to start"; exit 1; }
-
-      - name: Verify cached store paths
-        run: |
-          echo "=== Checking if key packages are in store ==="
-          for pkg in go golangci-lint 1password-cli git-cliff; do
-            path=$(ls -d /nix/store/*-${pkg}-* 2>/dev/null | head -1)
-            if [ -n "$path" ]; then
-              echo "FOUND: $path"
-              nix --extra-experimental-features nix-command path-info --offline "$path" 2>&1 && echo "  -> valid" || echo "  -> INVALID"
-            else
-              echo "MISSING: $pkg"
-            fi
-          done
-
-      - name: Activate Flox environment (verbose)
-        run: |
-          echo "=== Starting flox activate at $(date -u +%Y-%m-%dT%H:%M:%S.%3NZ) ==="
-          time flox activate -vv -- true
-          echo "=== Finished flox activate at $(date -u +%Y-%m-%dT%H:%M:%S.%3NZ) ==="
-
+          nix_conf: |
+            keep-env-derivations = true
+            keep-outputs = true
+      - name: Restore and save Nix store
+        uses: nix-community/cache-nix-action@v7
+        with:
+          # restore and save a cache using this key
+          primary-key: nix-${{ runner.os }}-${{ hashFiles('**/*.nix', '**/flake.lock') }}
+          # if there's no cache hit, restore a cache by this prefix
+          restore-prefixes-first-match: nix-${{ runner.os }}-
+          # collect garbage until the Nix store size (in bytes) is at most this number
+          # before trying to save a new cache
+          # 1G = 1073741824
+          gc-max-store-size-linux: 1G
+          # do purge caches
+          purge: true
+          # purge all versions of the cache
+          purge-prefixes: nix-${{ runner.os }}-
+          # created more than this number of seconds ago
+          purge-created: 0
+          # or last accessed this duration (ISO 8601 duration format)
+          # before the start of the `Post Restore and save Nix store` phase
+          purge-last-accessed: P1DT12H
+          # except any version with the key that is the same as the `primary-key`
+          purge-primary-key: never
       - name: Cache Go dependencies
         uses: actions/cache@v4
         with:
@@ -110,6 +57,21 @@ jobs:
           key: go-${{ hashFiles('go.sum') }}
           restore-keys: |
             go-
+
+      - name: Install Flox
+        id: flox-install
+        run: |
+          sudo -H nix profile install \
+            --profile /nix/var/nix/profiles/default \
+            --experimental-features "nix-command flakes" \
+            --accept-flake-config \
+            'github:flox/flox/1.11.0'
+
+      - name: Activate Flox environment (verbose)
+        run: |
+          echo "=== Starting flox activate at $(date -u +%Y-%m-%dT%H:%M:%S.%3NZ) ==="
+          time flox activate -vv -- true
+          echo "=== Finished flox activate at $(date -u +%Y-%m-%dT%H:%M:%S.%3NZ) ==="
 
       - name: Lint
         run: flox activate -- golangci-lint run --timeout 5m ./...
