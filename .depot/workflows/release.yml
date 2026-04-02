@@ -84,14 +84,11 @@ jobs:
       - name: Log in to GHCR
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-      - name: Set up Docker Buildx
-        run: docker buildx create --use
-
       - name: Build and push multi-platform image
         run: |
           IMAGE=ghcr.io/${{ github.actor }}/external-dns-nextdns-webhook
           VERSION=${{ github.ref_name }}
-          flox activate -- docker buildx build \
+          depot build \
             --platform linux/amd64,linux/arm64 \
             --build-arg VERSION=$VERSION \
             -t $IMAGE:$VERSION \
