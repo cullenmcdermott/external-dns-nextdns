@@ -48,10 +48,22 @@ jobs:
         uses: flox/install-flox-action@v2
 
       - name: Ensure nix-daemon is running
-        run: sudo systemctl start nix-daemon || sudo nix-daemon &
+        run: |
+          if command -v systemctl &>/dev/null && systemctl is-system-running &>/dev/null; then
+            sudo systemctl start nix-daemon
+          else
+            sudo nix-daemon &
+            # Wait for the daemon socket to be ready
+            for i in $(seq 1 30); do
+              [ -S /nix/var/nix/daemon-socket/socket ] && break
+              sleep 0.1
+            done
+          fi
+          # Verify the daemon is responding
+          nix store ping 2>/dev/null && echo "nix-daemon is ready" || echo "WARNING: nix-daemon may not be ready"
 
       - name: Activate Flox environment (verbose)
-        run: flox activate -vv -- true
+        run: flox activate -v -- true
 
       - name: Cache Go dependencies
         uses: actions/cache@v4
@@ -68,7 +80,7 @@ jobs:
         run: flox activate -- golangci-lint run --timeout 5m ./...
 
       - name: Test
-        run: flox activate -- go test -v -race ./...
+        run: flox activate -- env CGO_ENABLED=1 go test -v -race ./...
 
       - name: Build
         run: flox activate -- go build -ldflags="-s -w -X main.Version=dev" -o webhook ./cmd/webhook
