@@ -21,12 +21,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Cache Nix store
-        uses: actions/cache@v4
+      - name: Restore Nix cache
+        uses: actions/cache/restore@v4
         with:
           path: /nix
-          key: nix-${{ hashFiles('.flox/env/manifest.toml') }}
+          key: nix-${{ hashFiles('.flox/env/manifest.toml') }}-${{ github.run_id }}
           restore-keys: |
+            nix-${{ hashFiles('.flox/env/manifest.toml') }}-
             nix-
 
       - name: Check for existing Flox installation
@@ -51,17 +52,14 @@ jobs:
         run: |
           echo "=== Nix binary location ==="
           which nix 2>/dev/null || echo "nix not on PATH"
-          ls -la /nix/var/nix/profiles/default/bin/nix 2>/dev/null || echo "no default profile nix"
-          ls -la /nix/var/nix/daemon-socket/ 2>/dev/null || echo "no daemon socket dir"
           echo ""
-          echo "=== Nix DB present? ==="
+          echo "=== Nix DB ==="
           ls -la /nix/var/nix/db/db.sqlite 2>/dev/null || echo "no nix db"
+          echo "DB size: $(stat -c%s /nix/var/nix/db/db.sqlite 2>/dev/null || echo 'N/A') bytes"
           echo ""
-          echo "=== Store path count ==="
-          ls /nix/store/ 2>/dev/null | wc -l
-          echo ""
-          echo "=== Nix config ==="
-          cat /etc/nix/nix.conf 2>/dev/null || echo "no nix.conf"
+          echo "=== Store paths on disk vs in DB ==="
+          echo "Paths on disk: $(ls /nix/store/ 2>/dev/null | wc -l)"
+          echo "Valid paths in DB: $(nix --extra-experimental-features nix-command path-info --all 2>/dev/null | wc -l || echo 'cannot query')"
 
       - name: Ensure nix-daemon is running
         run: |
@@ -123,8 +121,19 @@ jobs:
         run: flox activate -- go build -ldflags="-s -w -X main.Version=dev" -o webhook ./cmd/webhook
 
       - name: Docker build
-        run: depot build --platform linux/amd64 --build-arg VERSION=dev -t external-dns-nextdns-webhook:ci .
+        run: depot build --project "$DEPOT_PROJECT_ID" --platform linux/amd64 --build-arg VERSION=dev -t external-dns-nextdns-webhook:ci .
 
       - name: Fix Nix permissions for caching
         if: always()
-        run: sudo chmod -R a+r /nix && sudo find /nix -type d -exec chmod a+rx {} +
+        run: |
+          echo "DB size before: $(stat -c%s /nix/var/nix/db/db.sqlite 2>/dev/null) bytes"
+          echo "Valid paths in DB: $(nix --extra-experimental-features nix-command path-info --all 2>/dev/null | wc -l)"
+          sudo chmod -R a+r /nix && sudo find /nix -type d -exec chmod a+rx {} +
+          echo "DB size after chmod: $(stat -c%s /nix/var/nix/db/db.sqlite 2>/dev/null) bytes"
+
+      - name: Save Nix cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: /nix
+          key: nix-${{ hashFiles('.flox/env/manifest.toml') }}-${{ github.run_id }}

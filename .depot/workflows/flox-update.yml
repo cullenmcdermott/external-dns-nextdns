@@ -20,12 +20,13 @@ jobs:
         with:
           ref: main
 
-      - name: Cache Nix store
-        uses: actions/cache@v4
+      - name: Restore Nix cache
+        uses: actions/cache/restore@v4
         with:
           path: /nix
-          key: nix-${{ hashFiles('.flox/env/manifest.toml') }}
+          key: nix-${{ hashFiles('.flox/env/manifest.toml') }}-${{ github.run_id }}
           restore-keys: |
+            nix-${{ hashFiles('.flox/env/manifest.toml') }}-
             nix-
 
       - name: Check for existing Flox installation
@@ -129,3 +130,10 @@ jobs:
       - name: Fix Nix permissions for caching
         if: always()
         run: sudo chmod -R a+r /nix && sudo find /nix -type d -exec chmod a+rx {} +
+
+      - name: Save Nix cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: /nix
+          key: nix-${{ hashFiles('.flox/env/manifest.toml') }}-${{ github.run_id }}

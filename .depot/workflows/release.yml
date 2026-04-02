@@ -22,12 +22,13 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Cache Nix store
-        uses: actions/cache@v4
+      - name: Restore Nix cache
+        uses: actions/cache/restore@v4
         with:
           path: /nix
-          key: nix-${{ hashFiles('.flox/env/manifest.toml') }}
+          key: nix-${{ hashFiles('.flox/env/manifest.toml') }}-${{ github.run_id }}
           restore-keys: |
+            nix-${{ hashFiles('.flox/env/manifest.toml') }}-
             nix-
 
       - name: Check for existing Flox installation
@@ -88,7 +89,7 @@ jobs:
         run: |
           IMAGE=ghcr.io/${{ github.actor }}/external-dns-nextdns-webhook
           VERSION=${{ github.ref_name }}
-          depot build \
+          depot build --project "$DEPOT_PROJECT_ID" \
             --platform linux/amd64,linux/arm64 \
             --build-arg VERSION=$VERSION \
             -t $IMAGE:$VERSION \
@@ -111,3 +112,10 @@ jobs:
       - name: Fix Nix permissions for caching
         if: always()
         run: sudo chmod -R a+r /nix && sudo find /nix -type d -exec chmod a+rx {} +
+
+      - name: Save Nix cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: /nix
+          key: nix-${{ hashFiles('.flox/env/manifest.toml') }}-${{ github.run_id }}
