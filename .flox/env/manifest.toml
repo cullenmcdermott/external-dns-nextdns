@@ -28,7 +28,6 @@ docker-compose.pkg-path = "docker-compose"
 just.pkg-path = "just"
 
 # CI/CD tools
-dagger.flake = "github:dagger/nix#dagger"
 git-cliff.pkg-path = "git-cliff"
 
 # Utilities

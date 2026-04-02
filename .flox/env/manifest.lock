@@ -9,9 +9,6 @@
       "curl": {
         "pkg-path": "curl"
       },
-      "dagger": {
-        "flake": "github:dagger/nix#dagger"
-      },
       "delve": {
         "pkg-path": "delve"
       },
@@ -2573,122 +2570,6 @@
       },
       "system": "x86_64-linux",
       "group": "toplevel",
-      "priority": 5
-    },
-    {
-      "install_id": "dagger",
-      "locked-url": "github:dagger/nix/e236052a8312eee5b8358cbfcd3a57ee6ceb7765?narHash=sha256-3%2BMXZ2A7WK6H5lfrdIMemYHhrmLNH9NvvJIQWeQk6EQ%3D",
-      "flake-description": "Dagger NUR repository",
-      "locked-flake-attr-path": "packages.aarch64-darwin.dagger",
-      "derivation": "/nix/store/dzlnyhp598yv0v894dy3xrzs6irwgr09-dagger-0.19.11.drv",
-      "outputs": {
-        "out": "/nix/store/ikw7dqn6dgkamxidvfl2phwzv0qvckmr-dagger-0.19.11"
-      },
-      "output-names": [
-        "out"
-      ],
-      "outputs-to-install": [
-        "out"
-      ],
-      "requested-outputs-to-install": [],
-      "package-system": "aarch64-darwin",
-      "system": "aarch64-darwin",
-      "name": "dagger-0.19.11",
-      "pname": "dagger",
-      "version": "0.19.11",
-      "description": "Dagger is an integrated platform to orchestrate the delivery of applications",
-      "licenses": [
-        "Apache-2.0"
-      ],
-      "broken": false,
-      "unfree": false,
-      "priority": 5
-    },
-    {
-      "install_id": "dagger",
-      "locked-url": "github:dagger/nix/e236052a8312eee5b8358cbfcd3a57ee6ceb7765?narHash=sha256-3%2BMXZ2A7WK6H5lfrdIMemYHhrmLNH9NvvJIQWeQk6EQ%3D",
-      "flake-description": "Dagger NUR repository",
-      "locked-flake-attr-path": "packages.aarch64-linux.dagger",
-      "derivation": "/nix/store/g0nafl99bb4v0kif9269n4fa6bpn9qa4-dagger-0.19.11.drv",
-      "outputs": {
-        "out": "/nix/store/nwmrym6xa47vibgx6z8dyxfjhgs09201-dagger-0.19.11"
-      },
-      "output-names": [
-        "out"
-      ],
-      "outputs-to-install": [
-        "out"
-      ],
-      "requested-outputs-to-install": [],
-      "package-system": "aarch64-linux",
-      "system": "aarch64-linux",
-      "name": "dagger-0.19.11",
-      "pname": "dagger",
-      "version": "0.19.11",
-      "description": "Dagger is an integrated platform to orchestrate the delivery of applications",
-      "licenses": [
-        "Apache-2.0"
-      ],
-      "broken": false,
-      "unfree": false,
-      "priority": 5
-    },
-    {
-      "install_id": "dagger",
-      "locked-url": "github:dagger/nix/e236052a8312eee5b8358cbfcd3a57ee6ceb7765?narHash=sha256-3%2BMXZ2A7WK6H5lfrdIMemYHhrmLNH9NvvJIQWeQk6EQ%3D",
-      "flake-description": "Dagger NUR repository",
-      "locked-flake-attr-path": "packages.x86_64-darwin.dagger",
-      "derivation": "/nix/store/p4brf3s159l95ck03ycqfr3pkmzd4ks0-dagger-0.19.11.drv",
-      "outputs": {
-        "out": "/nix/store/q07j5w7mz9g87iaqzpyspspm8ib3fdzm-dagger-0.19.11"
-      },
-      "output-names": [
-        "out"
-      ],
-      "outputs-to-install": [
-        "out"
-      ],
-      "requested-outputs-to-install": [],
-      "package-system": "x86_64-darwin",
-      "system": "x86_64-darwin",
-      "name": "dagger-0.19.11",
-      "pname": "dagger",
-      "version": "0.19.11",
-      "description": "Dagger is an integrated platform to orchestrate the delivery of applications",
-      "licenses": [
-        "Apache-2.0"
-      ],
-      "broken": false,
-      "unfree": false,
-      "priority": 5
-    },
-    {
-      "install_id": "dagger",
-      "locked-url": "github:dagger/nix/e236052a8312eee5b8358cbfcd3a57ee6ceb7765?narHash=sha256-3%2BMXZ2A7WK6H5lfrdIMemYHhrmLNH9NvvJIQWeQk6EQ%3D",
-      "flake-description": "Dagger NUR repository",
-      "locked-flake-attr-path": "packages.x86_64-linux.dagger",
-      "derivation": "/nix/store/sffqspnsmappm75m475wcy8mgk369ar5-dagger-0.19.11.drv",
-      "outputs": {
-        "out": "/nix/store/dvpazxn0xrb351bzvy319z1bvyn54rdx-dagger-0.19.11"
-      },
-      "output-names": [
-        "out"
-      ],
-      "outputs-to-install": [
-        "out"
-      ],
-      "requested-outputs-to-install": [],
-      "package-system": "x86_64-linux",
-      "system": "x86_64-linux",
-      "name": "dagger-0.19.11",
-      "pname": "dagger",
-      "version": "0.19.11",
-      "description": "Dagger is an integrated platform to orchestrate the delivery of applications",
-      "licenses": [
-        "Apache-2.0"
-      ],
-      "broken": false,
-      "unfree": false,
       "priority": 5
     }
   ]

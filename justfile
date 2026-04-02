@@ -42,12 +42,6 @@ help:
     @echo "  just deps               Download dependencies"
     @echo "  just tidy               Tidy dependencies"
     @echo ""
-    @echo "Dagger Commands:"
-    @echo "  just dagger-ci          Run full Dagger CI pipeline"
-    @echo "  just dagger-test        Run tests with Dagger"
-    @echo "  just dagger-lint        Run linter with Dagger"
-    @echo "  just dagger-build       Build binary with Dagger"
-    @echo "  just dagger-docker      Build Docker image with Dagger"
 
 # ==========================================
 # Development Environment (Flox)
@@ -174,31 +168,3 @@ tidy:
     go mod tidy
     @echo "✅ Dependencies tidied"
 
-# ==========================================
-# Dagger Commands
-# ==========================================
-
-# Run full Dagger CI pipeline (lint, test, build, docker)
-dagger-ci:
-    @echo "🚀 Running Dagger CI pipeline..."
-    dagger call ci --source=.
-
-# Run tests with Dagger
-dagger-test:
-    @echo "🧪 Running tests with Dagger..."
-    dagger call test --source=.
-
-# Run linter with Dagger
-dagger-lint:
-    @echo "🔍 Running lint with Dagger..."
-    dagger call lint --source=.
-
-# Build binary with Dagger
-dagger-build:
-    @echo "🔨 Building with Dagger..."
-    dagger call build --source=. --version={{version}}
-
-# Build Docker image with Dagger
-dagger-docker:
-    @echo "🐳 Building Docker image with Dagger..."
-    dagger call build-docker --source=. --version={{version}}

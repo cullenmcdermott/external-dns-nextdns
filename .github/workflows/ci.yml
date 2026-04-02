@@ -13,20 +13,22 @@ jobs:
   ci:
     name: CI Pipeline
     runs-on: ubuntu-latest
+    env:
+      FLOX_DISABLE_METRICS: "true"
     steps:
       - uses: actions/checkout@v4
 
-      - name: Run Dagger CI Pipeline
-        uses: dagger/dagger-for-github@v8.2.0
-        with:
-          version: "0.19.11"
-          verb: "call"
-          args: "ci --source=. export --path=coverage.out"
-          cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
+      - name: Install Flox
+        uses: flox/install-flox-action@v2
 
-      - name: Upload Coverage to Codecov
-        uses: codecov/codecov-action@v4
-        with:
-          files: coverage.out
-          fail_ci_if_error: false
-        continue-on-error: true
+      - name: Activate Flox environment
+        run: flox activate --verbose -- echo "Flox environment activated"
+
+      - name: Lint
+        run: flox activate -- golangci-lint run --timeout 5m ./...
+
+      - name: Test
+        run: flox activate -- go test -v -race ./...
+
+      - name: Build
+        run: flox activate -- go build -ldflags="-s -w -X main.Version=dev" -o webhook ./cmd/webhook
