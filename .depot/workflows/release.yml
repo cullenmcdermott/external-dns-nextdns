@@ -22,49 +22,51 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Restore Nix cache
-        uses: actions/cache/restore@v4
+      - uses: cachix/install-nix-action@v31
         with:
-          path: /nix
-          key: nix-${{ hashFiles('.flox/env/manifest.toml') }}-${{ github.run_id }}
+          nix_path: nixpkgs=channel:nixpkgs-unstable
+
+      - name: Restore and save Nix store
+        uses: nix-community/cache-nix-action@v7
+        with:
+          # restore and save a cache using this key
+          primary-key: nix-${{ runner.os }}-${{ hashFiles('**/*.nix', '**/flake.lock') }}
+          # if there's no cache hit, restore a cache by this prefix
+          restore-prefixes-first-match: nix-${{ runner.os }}-
+          # collect garbage until the Nix store size (in bytes) is at most this number
+          # before trying to save a new cache
+          # 1G = 1073741824
+          gc-max-store-size-linux: 5G
+          # do purge caches
+          purge: true
+          # purge all versions of the cache
+          purge-prefixes: nix-${{ runner.os }}-
+          # created more than this number of seconds ago
+          purge-created: 0
+          # or last accessed this duration (ISO 8601 duration format)
+          # before the start of the `Post Restore and save Nix store` phase
+          purge-last-accessed: P1DT12H
+          # except any version with the key that is the same as the `primary-key`
+          purge-primary-key: never
+      - name: Cache Go dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            /home/runner/.cache/go/pkg/mod
+            /home/runner/.cache/go-build
+            /home/runner/.cache/golangci-lint
+          key: go-${{ hashFiles('go.sum') }}
           restore-keys: |
-            nix-${{ hashFiles('.flox/env/manifest.toml') }}-
-            nix-
-
-      - name: Check for existing Flox installation
-        id: flox-check
-        run: |
-          if command -v flox &>/dev/null; then
-            echo "installed=true" >> "$GITHUB_OUTPUT"
-            echo "Flox already installed: $(flox --version)"
-          else
-            echo "installed=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Upgrade Flox
-        if: steps.flox-check.outputs.installed == 'true'
-        run: flox upgrade
+            go-
 
       - name: Install Flox
-        if: steps.flox-check.outputs.installed != 'true'
-        uses: flox/install-flox-action@v2
-
-      - name: Ensure nix-daemon is running
+        id: flox-install
         run: |
-          if command -v systemctl &>/dev/null && systemctl is-system-running &>/dev/null 2>&1; then
-            sudo systemctl start nix-daemon
-          else
-            sudo mkdir -p /nix/var/nix/daemon-socket
-            sudo nix-daemon &
-          fi
-          for i in $(seq 1 100); do
-            if nix --extra-experimental-features nix-command store ping &>/dev/null; then
-              echo "nix-daemon is ready"
-              break
-            fi
-            sleep 0.1
-          done
-          nix --extra-experimental-features nix-command store ping &>/dev/null || { echo "ERROR: nix-daemon failed to start"; exit 1; }
+          . /home/runner/.nix-profile/etc/profile.d/nix.sh
+          nix profile install \
+            --experimental-features "nix-command flakes" \
+            --accept-flake-config \
+            'github:flox/flox/v1.11.0'
 
       - name: Activate Flox environment (verbose)
         run: flox activate -vv -- true
