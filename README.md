@@ -173,4 +173,4 @@ Flox packages aren't supported by Renovate yet ([tracking issue](https://discour
 
 ## License
 
-TODO
+Apache License 2.0. See [LICENSE](LICENSE) for details.

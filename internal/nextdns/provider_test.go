@@ -419,7 +419,6 @@ func TestLogChanges(t *testing.T) {
 }
 
 // TestParseOverwriteAnnotation tests the annotation parsing logic for overwrite control.
-// This is Task 2.1 from the spec - focused tests for annotation parsing.
 func TestParseOverwriteAnnotation(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -543,12 +542,7 @@ func TestParseOverwriteAnnotation(t *testing.T) {
 	}
 }
 
-// =============================================================================
-// Task Group 3 Tests: Enhanced Dry-Run and Update Logging
-// =============================================================================
-
-// TestDryRunDiffOutput_Create tests that dry-run mode logs CREATE operations correctly
-// This is Task 3.1 from the spec - test dry-run generates correct diff output for CREATE
+// TestDryRunDiffOutput_Create tests that dry-run mode logs CREATE operations correctly.
 func TestDryRunDiffOutput_Create(t *testing.T) {
 	provider := &Provider{
 		config: &Config{
@@ -581,8 +575,7 @@ func TestDryRunDiffOutput_Create(t *testing.T) {
 	// Test passes if no panic occurs and dry-run completes successfully
 }
 
-// TestDryRunDiffOutput_Update tests that dry-run mode logs UPDATE operations with current vs planned values
-// This is Task 3.1 from the spec - test dry-run generates correct diff for UPDATE
+// TestDryRunDiffOutput_Update tests that dry-run mode logs UPDATE operations with current vs planned values.
 func TestDryRunDiffOutput_Update(t *testing.T) {
 	provider := &Provider{
 		config: &Config{
@@ -620,8 +613,7 @@ func TestDryRunDiffOutput_Update(t *testing.T) {
 	// Test passes if no panic occurs and dry-run completes successfully
 }
 
-// TestDryRunWithConflict tests dry-run mode shows overwrite protection status for conflicting creates
-// This is Task 3.1 from the spec - test conflict detection and overwrite status
+// TestDryRunWithConflict tests dry-run mode shows overwrite protection status for conflicting creates.
 func TestDryRunWithConflict(t *testing.T) {
 	provider := &Provider{
 		config: &Config{
@@ -659,13 +651,8 @@ func TestDryRunWithConflict(t *testing.T) {
 	}
 }
 
-// =============================================================================
-// Task Group 4 Tests: Integration and Backward Compatibility
-// =============================================================================
-
 // TestConfigBackwardCompatibility_NoAllowOverwrite verifies that the Config struct
 // no longer has an AllowOverwrite field (it was removed and replaced with per-record annotations).
-// This is Task 4.5 - verify backward compatibility.
 func TestConfigBackwardCompatibility_NoAllowOverwrite(t *testing.T) {
 	// Create a config with all fields - if AllowOverwrite existed, this would fail to compile
 	config := &Config{
@@ -696,7 +683,6 @@ func TestConfigBackwardCompatibility_NoAllowOverwrite(t *testing.T) {
 }
 
 // TestDryRunDiffOutput_Delete tests that dry-run mode logs DELETE operations correctly.
-// This is Task 4.3 - additional strategic test for complete dry-run coverage.
 func TestDryRunDiffOutput_Delete(t *testing.T) {
 	provider := &Provider{
 		config: &Config{
@@ -729,8 +715,7 @@ func TestDryRunDiffOutput_Delete(t *testing.T) {
 }
 
 // TestApplyChanges_BackwardCompatibility verifies that ApplyChanges still works
-// with the expected method signature and behavior (except for enhancements).
-// This is Task 4.5 - verify backward compatibility.
+// with the expected method signature and behavior.
 func TestApplyChanges_BackwardCompatibility(t *testing.T) {
 	provider := &Provider{
 		config: &Config{
@@ -767,9 +752,8 @@ func TestApplyChanges_BackwardCompatibility(t *testing.T) {
 	}
 }
 
-// TestAdjustEndpointsMethod_BackwardCompatibility verifies that AdjustEndpoints()
-// method still has the expected signature and behavior.
-// This is Task 4.5 - verify backward compatibility.
+// TestAdjustEndpointsMethod_BackwardCompatibility verifies that AdjustEndpoints
+// still has the expected signature and behavior.
 func TestAdjustEndpointsMethod_BackwardCompatibility(t *testing.T) {
 	provider := &Provider{
 		config: &Config{

@@ -2,6 +2,7 @@ package nextdns
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/amalucelli/nextdns-go/nextdns"
@@ -84,17 +85,44 @@ func TestClientFields(t *testing.T) {
 	}
 }
 
+// mockRewritesService implements nextdns.RewritesService for testing.
+type mockRewritesService struct {
+	rewrites []*nextdns.Rewrites
+	listErr  error
+}
+
+func (m *mockRewritesService) List(_ context.Context, _ *nextdns.ListRewritesRequest) ([]*nextdns.Rewrites, error) {
+	return m.rewrites, m.listErr
+}
+
+func (m *mockRewritesService) Create(_ context.Context, _ *nextdns.CreateRewritesRequest) (string, error) {
+	return "", nil
+}
+
+func (m *mockRewritesService) Delete(_ context.Context, _ *nextdns.DeleteRewritesRequest) error {
+	return nil
+}
+
+// newTestClient creates a Client with a mock RewritesService for unit testing.
+func newTestClient(mock *mockRewritesService) *Client {
+	api, _ := nextdns.New(nextdns.WithAPIKey("test-key"))
+	api.Rewrites = mock
+	return &Client{api: api, profileID: "test-profile"}
+}
+
 func TestFindRewriteByName(t *testing.T) {
 	tests := []struct {
 		name        string
 		searchName  string
 		searchType  string
 		rewrites    []*nextdns.Rewrites
+		listErr     error
 		wantFound   bool
-		wantRewrite *nextdns.Rewrites
+		wantContent string
+		wantErr     bool
 	}{
 		{
-			name:       "found exact match",
+			name:       "exact match",
 			searchName: "test.example.com",
 			searchType: "A",
 			rewrites: []*nextdns.Rewrites{
@@ -102,35 +130,32 @@ func TestFindRewriteByName(t *testing.T) {
 				{ID: "2", Name: "other.example.com", Type: "A", Content: "192.168.1.2"},
 			},
 			wantFound:   true,
-			wantRewrite: &nextdns.Rewrites{ID: "1", Name: "test.example.com", Type: "A", Content: "192.168.1.1"},
+			wantContent: "192.168.1.1",
 		},
 		{
-			name:       "not found - wrong name",
+			name:       "wrong name",
 			searchName: "missing.example.com",
 			searchType: "A",
 			rewrites: []*nextdns.Rewrites{
 				{ID: "1", Name: "test.example.com", Type: "A", Content: "192.168.1.1"},
 			},
-			wantFound:   false,
-			wantRewrite: nil,
+			wantFound: false,
 		},
 		{
-			name:       "not found - wrong type",
+			name:       "wrong type",
 			searchName: "test.example.com",
 			searchType: "AAAA",
 			rewrites: []*nextdns.Rewrites{
 				{ID: "1", Name: "test.example.com", Type: "A", Content: "192.168.1.1"},
 			},
-			wantFound:   false,
-			wantRewrite: nil,
+			wantFound: false,
 		},
 		{
-			name:        "empty rewrites list",
-			searchName:  "test.example.com",
-			searchType:  "A",
-			rewrites:    []*nextdns.Rewrites{},
-			wantFound:   false,
-			wantRewrite: nil,
+			name:       "empty list",
+			searchName: "test.example.com",
+			searchType: "A",
+			rewrites:   []*nextdns.Rewrites{},
+			wantFound:  false,
 		},
 		{
 			name:       "multiple matches returns first",
@@ -141,61 +166,42 @@ func TestFindRewriteByName(t *testing.T) {
 				{ID: "2", Name: "test.example.com", Type: "A", Content: "192.168.1.2"},
 			},
 			wantFound:   true,
-			wantRewrite: &nextdns.Rewrites{ID: "1", Name: "test.example.com", Type: "A", Content: "192.168.1.1"},
+			wantContent: "192.168.1.1",
+		},
+		{
+			name:       "list error propagates",
+			searchName: "test.example.com",
+			searchType: "A",
+			listErr:    fmt.Errorf("API unavailable"),
+			wantErr:    true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// This test would require mocking the NextDNS API client.
-			// For now, we skip and document that integration tests should cover this.
-			// The test structure is kept for future implementation with proper mocking.
-			t.Skip("Skipping test that requires API mocking - covered by integration tests")
+			client := newTestClient(&mockRewritesService{
+				rewrites: tt.rewrites,
+				listErr:  tt.listErr,
+			})
 
-			// When mocking is implemented, this test would:
-			// 1. Create a mock client that returns tt.rewrites
-			// 2. Call FindRewriteByName with tt.searchName and tt.searchType
-			// 3. Verify the result matches tt.wantFound and tt.wantRewrite
-			_ = tt // use tt to avoid unused variable warning
+			rewrite, found, err := client.FindRewriteByName(context.Background(), tt.searchName, tt.searchType)
+
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("FindRewriteByName() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if tt.wantErr {
+				return
+			}
+			if found != tt.wantFound {
+				t.Errorf("FindRewriteByName() found = %v, want %v", found, tt.wantFound)
+			}
+			if tt.wantFound && rewrite.Content != tt.wantContent {
+				t.Errorf("FindRewriteByName() content = %v, want %v", rewrite.Content, tt.wantContent)
+			}
+			if !tt.wantFound && rewrite != nil {
+				t.Errorf("FindRewriteByName() rewrite = %v, want nil", rewrite)
+			}
 		})
 	}
 }
 
-// Test that client methods have correct signatures and can be called
-func TestClientMethodSignatures(t *testing.T) {
-	// This test verifies that all expected methods exist and have correct signatures
-	// It doesn't test functionality (that requires mocking or integration tests)
-
-	client, err := NewClient("test-key", "test-profile", "https://api.nextdns.io")
-	if err != nil {
-		t.Fatalf("NewClient() failed: %v", err)
-	}
-
-	ctx := context.Background()
-
-	// Test that methods can be called (they will fail with real API, but that's ok)
-	t.Run("TestConnection method exists", func(t *testing.T) {
-		// Method should exist and return error (since we're using fake credentials)
-		_ = client.TestConnection(ctx)
-	})
-
-	t.Run("ListRewrites method exists", func(t *testing.T) {
-		_, _ = client.ListRewrites(ctx)
-	})
-
-	t.Run("CreateRewrite method exists", func(t *testing.T) {
-		_, _ = client.CreateRewrite(ctx, "test.example.com", "A", "192.168.1.1")
-	})
-
-	t.Run("DeleteRewrite method exists", func(t *testing.T) {
-		_ = client.DeleteRewrite(ctx, "test-id")
-	})
-
-	t.Run("FindRewriteByName method exists", func(t *testing.T) {
-		_, _, _ = client.FindRewriteByName(ctx, "test.example.com", "A")
-	})
-
-	t.Run("UpdateRewrite method exists", func(t *testing.T) {
-		_, _ = client.UpdateRewrite(ctx, "test-id", "test.example.com", "A", "192.168.1.1")
-	})
-}
