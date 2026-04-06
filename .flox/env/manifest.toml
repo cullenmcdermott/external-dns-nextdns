@@ -1,6 +1,6 @@
 # Flox Environment Manifest for external-dns-nextdns-webhook
 
-version = 1
+schema-version = "1.11.0"
 
 [install]
 # Go toolchain
@@ -15,6 +15,7 @@ go-tools.pkg-path = "gotools"
 # Kubernetes tools
 kind.pkg-path = "kind"
 kubectl.pkg-path = "kubectl"
+kubectl.outputs = "all"
 helm.pkg-path = "kubernetes-helm"
 ctlptl.pkg-path = "ctlptl"
 tilt.pkg-path = "tilt"
@@ -26,15 +27,19 @@ docker-compose.pkg-path = "docker-compose"
 
 # Task runner
 just.pkg-path = "just"
+just.outputs = "all"
 
 # CI/CD tools
 git-cliff.pkg-path = "git-cliff"
 
 # Utilities
 jq.pkg-path = "jq"
+jq.outputs = "all"
 yq.pkg-path = "yq-go"
 git.pkg-path = "git"
+git.outputs = "all"
 curl.pkg-path = "curl"
+curl.outputs = "all"
 op.pkg-path = "_1password-cli"
 gum.pkg-path = "gum"
 
