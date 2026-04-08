@@ -52,7 +52,6 @@ jobs:
         with:
           path: |
             /home/runner/.cache/go/pkg/mod
-            /home/runner/.cache/go-build
             /home/runner/.cache/golangci-lint
           key: go-${{ hashFiles('go.sum') }}
           restore-keys: |
@@ -82,6 +81,4 @@ jobs:
 
       - name: Build container image
         run: flox activate -- ko build ./cmd/webhook --local --platform=linux/amd64
-        env:
-          GOCACHEPROG: depot gocache
 

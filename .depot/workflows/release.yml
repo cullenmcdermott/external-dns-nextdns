@@ -16,7 +16,7 @@ jobs:
     env:
       FLOX_DISABLE_METRICS: "true"
       GOMODCACHE: /home/runner/.cache/go/pkg/mod
-      GOCACHE: /home/runner/.cache/go-build
+      GOCACHEPROG: depot gocache
     steps:
       - uses: actions/checkout@v4
         with:
@@ -53,7 +53,6 @@ jobs:
         with:
           path: |
             /home/runner/.cache/go/pkg/mod
-            /home/runner/.cache/go-build
             /home/runner/.cache/golangci-lint
           key: go-${{ hashFiles('go.sum') }}
           restore-keys: |
@@ -89,7 +88,6 @@ jobs:
         env:
           KO_DOCKER_REPO: ghcr.io/${{ github.actor }}/external-dns-nextdns-webhook
           GOFLAGS: -ldflags=-s -w -X main.Version=${{ github.ref_name }}
-          GOCACHEPROG: depot gocache
 
       - name: Generate Changelog
         run: flox activate -- git-cliff --config cliff.toml --latest --strip header -o CHANGELOG.md
