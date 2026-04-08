@@ -83,12 +83,11 @@ build:
     go build -ldflags="-s -w -X main.Version={{version}}" -o {{binary_name}} ./cmd/webhook
     @echo "✅ Build complete: {{binary_name}}"
 
-# Build Docker image
-docker-build:
-    @echo "🐳 Building Docker image..."
-    docker build -t {{docker_image}}:{{version}} .
-    docker tag {{docker_image}}:{{version}} {{docker_image}}:latest
-    @echo "✅ Docker image built: {{docker_image}}:{{version}}"
+# Build container image with ko
+image-build:
+    @echo "🐳 Building container image with ko..."
+    ko build ./cmd/webhook --local
+    @echo "✅ Container image built"
 
 # Clean build artifacts and caches
 clean:

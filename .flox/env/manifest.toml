@@ -37,6 +37,7 @@ git.pkg-path = "git"
 curl.pkg-path = "curl"
 op.pkg-path = "_1password-cli"
 gum.pkg-path = "gum"
+ko.pkg-path = "ko"
 
 [vars]
 PROJECT_NAME = "external-dns-nextdns-webhook"

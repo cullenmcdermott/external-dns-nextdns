@@ -71,32 +71,24 @@ jobs:
       - name: Activate Flox environment (verbose)
         run: flox activate -vv -- true
 
-      - name: Cache Go dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            /home/runner/.cache/go/pkg/mod
-            /home/runner/.cache/go-build
-          key: go-${{ hashFiles('go.sum') }}
-          restore-keys: |
-            go-
-
       - name: Test
         run: flox activate -- env CGO_ENABLED=1 go test -v -race ./...
 
       - name: Log in to GHCR
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push multi-platform image
         run: |
-          IMAGE=ghcr.io/${{ github.actor }}/external-dns-nextdns-webhook
-          VERSION=${{ github.ref_name }}
-          depot build --project "$DEPOT_PROJECT_ID" \
-            --platform linux/amd64,linux/arm64 \
-            --build-arg VERSION=$VERSION \
-            -t $IMAGE:$VERSION \
-            -t $IMAGE:latest \
-            --push .
+          flox activate -- ko build ./cmd/webhook \
+            --platform=linux/amd64,linux/arm64 \
+            --tags=${{ github.ref_name }},latest
+        env:
+          KO_DOCKER_REPO: ghcr.io/${{ github.actor }}/external-dns-nextdns-webhook
+          GOFLAGS: -ldflags=-s -w -X main.Version=${{ github.ref_name }}
 
       - name: Generate Changelog
         run: flox activate -- git-cliff --config cliff.toml --latest --strip header -o CHANGELOG.md

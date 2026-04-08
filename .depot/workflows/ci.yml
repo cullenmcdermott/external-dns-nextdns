@@ -83,9 +83,6 @@ jobs:
       - name: Build
         run: flox activate -- go build -ldflags="-s -w -X main.Version=dev" -o webhook ./cmd/webhook
 
-      - uses: depot/setup-action@v1
-      - uses: depot/build-push-action@v1
-        with:
-          project: ms8q29bc5z
-          context: .
+      - name: Build container image
+        run: flox activate -- ko build ./cmd/webhook --local --platform=linux/amd64
 

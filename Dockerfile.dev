@@ -1,7 +1,7 @@
 # Development Dockerfile with live reload support
 # NOTE: Runs as root to enable Tilt live updates (source file syncing)
 # Production Dockerfile uses non-root user for security
-FROM golang:1.25-alpine
+FROM golang:1.26-alpine
 
 # Install build dependencies
 RUN apk add --no-cache git ca-certificates
