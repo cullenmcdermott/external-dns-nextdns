@@ -62,10 +62,10 @@ jobs:
         id: flox-install
         run: |
           . /home/runner/.nix-profile/etc/profile.d/nix.sh
-          nix profile install \
+          nix profile add \
             --experimental-features "nix-command flakes" \
             --accept-flake-config \
-            'github:flox/flox/v1.11.0'
+            'github:flox/flox/v1.11.1'
 
       - name: Activate Flox environment (verbose)
         run: |
