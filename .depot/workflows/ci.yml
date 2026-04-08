@@ -80,9 +80,8 @@ jobs:
       - name: Test
         run: flox activate -- env CGO_ENABLED=1 go test -v -race ./...
 
-      - name: Build
-        run: flox activate -- go build -ldflags="-s -w -X main.Version=dev" -o webhook ./cmd/webhook
-
       - name: Build container image
         run: flox activate -- ko build ./cmd/webhook --local --platform=linux/amd64
+        env:
+          GOCACHEPROG: depot gocache
 
