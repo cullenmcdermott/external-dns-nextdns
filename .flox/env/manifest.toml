@@ -1,6 +1,6 @@
 # Flox Environment Manifest for external-dns-nextdns-webhook
 
-version = 1
+schema-version = "1.11.0"
 
 [install]
 # Go toolchain
