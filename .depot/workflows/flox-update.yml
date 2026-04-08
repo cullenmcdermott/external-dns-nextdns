@@ -129,13 +129,3 @@ jobs:
             automated
           draft: false
 
-      - name: Fix Nix permissions for caching
-        if: always()
-        run: sudo chmod -R a+r /nix && sudo find /nix -type d -exec chmod a+rx {} +
-
-      - name: Save Nix cache
-        if: always()
-        uses: actions/cache/save@v4
-        with:
-          path: /nix
-          key: nix-${{ hashFiles('.flox/env/manifest.toml') }}-${{ github.run_id }}

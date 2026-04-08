@@ -89,17 +89,3 @@ jobs:
           project: ms8q29bc5z
           context: .
 
-      - name: Fix Nix permissions for caching
-        if: always()
-        run: |
-          echo "DB size before: $(stat -c%s /nix/var/nix/db/db.sqlite 2>/dev/null) bytes"
-          echo "Valid paths in DB: $(nix --extra-experimental-features nix-command path-info --all 2>/dev/null | wc -l)"
-          sudo chmod -R a+r /nix && sudo find /nix -type d -exec chmod a+rx {} +
-          echo "DB size after chmod: $(stat -c%s /nix/var/nix/db/db.sqlite 2>/dev/null) bytes"
-
-      - name: Save Nix cache
-        if: always()
-        uses: actions/cache/save@v4
-        with:
-          path: /nix
-          key: nix-${{ hashFiles('.flox/env/manifest.toml') }}-${{ github.run_id }}
