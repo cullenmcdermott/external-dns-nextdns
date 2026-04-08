@@ -71,8 +71,28 @@ export GOCACHE="${GOCACHE:-${FLOX_ENV_CACHE:-/tmp}/go-build}"
 export GOMODCACHE="${GOMODCACHE:-${FLOX_ENV_CACHE:-/tmp}/go/pkg/mod}"
 mkdir -p "$GOENV" "$GOCACHE" "$GOMODCACHE"
 
+setup_git_hooks() {
+  local hook_dir="$FLOX_ENV_PROJECT/.git/hooks"
+  local hook_file="$hook_dir/pre-commit"
+  local marker="# managed by flox"
+  if [ -d "$FLOX_ENV_PROJECT/.git" ] && { [ ! -f "$hook_file" ] || grep -q "$marker" "$hook_file"; }; then
+    cat > "$hook_file" <<'HOOK'
+#!/usr/bin/env bash
+# managed by flox
+set -euo pipefail
+if ! command -v golangci-lint >/dev/null 2>&1; then
+  echo "warning: golangci-lint not found, skipping pre-commit lint (activate flox env)" >&2
+  exit 0
+fi
+exec golangci-lint run --new-from-rev=HEAD
+HOOK
+    chmod +x "$hook_file"
+  fi
+}
+
 setup_go_deps
 setup_kubectl_context
+setup_git_hooks
 cd "$FLOX_ENV_PROJECT"
 '''
 
