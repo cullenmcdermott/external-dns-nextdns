@@ -16,8 +16,8 @@ jobs:
     env:
       FLOX_DISABLE_METRICS: "true"
       GOMODCACHE: /home/runner/.cache/go/pkg/mod
-      GOCACHE: /home/runner/.cache/go-build
       GOLANGCI_LINT_CACHE: /home/runner/.cache/golangci-lint
+      GOCACHEPROG: depot gocache
     steps:
       - uses: actions/checkout@v4
 
