@@ -103,7 +103,7 @@ By default, the provider won't overwrite a DNS record that already exists in Nex
 ```yaml
 metadata:
   annotations:
-    external-dns.alpha.kubernetes.io/nextdns-allow-overwrite: "true"
+    external-dns.kubernetes.io/webhook-nextdns-allow-overwrite: "true"
 ```
 
 When an overwrite is blocked, you'll see a log like:
@@ -114,7 +114,7 @@ WARNING: Record already exists and will NOT be overwritten.
     Record Type: A
     Current Value: 192.168.1.100
     Planned Value: 192.168.1.200
-    To allow overwrite, add annotation: external-dns.alpha.kubernetes.io/nextdns-allow-overwrite: "true"
+    To allow overwrite, add annotation: external-dns.kubernetes.io/webhook-nextdns-allow-overwrite: "true"
 ```
 
 ## Dry-run mode

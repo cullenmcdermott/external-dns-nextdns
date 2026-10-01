@@ -426,6 +426,15 @@ func TestParseOverwriteAnnotation(t *testing.T) {
 		want     bool
 	}{
 		{
+			name: "raw Kubernetes annotation key - blocks overwrite",
+			endpoint: &endpoint.Endpoint{
+				ProviderSpecific: endpoint.ProviderSpecific{
+					{Name: "external-dns.alpha.kubernetes.io/nextdns-allow-overwrite", Value: "true"},
+				},
+			},
+			want: false,
+		},
+		{
 			name: "annotation present with value true - allows overwrite",
 			endpoint: &endpoint.Endpoint{
 				DNSName:    "test.example.com",
@@ -433,7 +442,7 @@ func TestParseOverwriteAnnotation(t *testing.T) {
 				Targets:    []string{"192.168.1.1"},
 				ProviderSpecific: endpoint.ProviderSpecific{
 					{
-						Name:  "external-dns.alpha.kubernetes.io/nextdns-allow-overwrite",
+						Name:  "webhook/nextdns-allow-overwrite",
 						Value: "true",
 					},
 				},
@@ -448,7 +457,7 @@ func TestParseOverwriteAnnotation(t *testing.T) {
 				Targets:    []string{"192.168.1.1"},
 				ProviderSpecific: endpoint.ProviderSpecific{
 					{
-						Name:  "external-dns.alpha.kubernetes.io/nextdns-allow-overwrite",
+						Name:  "webhook/nextdns-allow-overwrite",
 						Value: "false",
 					},
 				},
@@ -473,7 +482,7 @@ func TestParseOverwriteAnnotation(t *testing.T) {
 				Targets:    []string{"192.168.1.1"},
 				ProviderSpecific: endpoint.ProviderSpecific{
 					{
-						Name:  "external-dns.alpha.kubernetes.io/nextdns-allow-overwrite",
+						Name:  "webhook/nextdns-allow-overwrite",
 						Value: "TRUE",
 					},
 				},
@@ -488,7 +497,7 @@ func TestParseOverwriteAnnotation(t *testing.T) {
 				Targets:    []string{"192.168.1.1"},
 				ProviderSpecific: endpoint.ProviderSpecific{
 					{
-						Name:  "external-dns.alpha.kubernetes.io/nextdns-allow-overwrite",
+						Name:  "webhook/nextdns-allow-overwrite",
 						Value: "True",
 					},
 				},
@@ -503,7 +512,7 @@ func TestParseOverwriteAnnotation(t *testing.T) {
 				Targets:    []string{"192.168.1.1"},
 				ProviderSpecific: endpoint.ProviderSpecific{
 					{
-						Name:  "external-dns.alpha.kubernetes.io/nextdns-allow-overwrite",
+						Name:  "webhook/nextdns-allow-overwrite",
 						Value: "yes",
 					},
 				},
@@ -523,7 +532,7 @@ func TestParseOverwriteAnnotation(t *testing.T) {
 				Targets:    []string{"192.168.1.1"},
 				ProviderSpecific: endpoint.ProviderSpecific{
 					{
-						Name:  "external-dns.alpha.kubernetes.io/some-other-annotation",
+						Name:  "webhook/some-other-annotation",
 						Value: "true",
 					},
 				},
@@ -633,7 +642,7 @@ func TestDryRunWithConflict(t *testing.T) {
 				Targets:    []string{"192.168.1.1"},
 				ProviderSpecific: endpoint.ProviderSpecific{
 					{
-						Name:  "external-dns.alpha.kubernetes.io/nextdns-allow-overwrite",
+						Name:  "webhook/nextdns-allow-overwrite",
 						Value: "true",
 					},
 				},
