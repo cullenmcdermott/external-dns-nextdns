@@ -7,7 +7,7 @@ metadata:
   namespace: default
   annotations:
     # This annotation tells external-dns to create a DNS record
-    external-dns.alpha.kubernetes.io/hostname: app.example.com
+    external-dns.kubernetes.io/hostname: app.example.com
 spec:
   ingressClassName: nginx
   rules:
@@ -29,7 +29,7 @@ metadata:
   name: example-loadbalancer
   namespace: default
   annotations:
-    external-dns.alpha.kubernetes.io/hostname: lb.example.com
+    external-dns.kubernetes.io/hostname: lb.example.com
 spec:
   type: LoadBalancer
   selector:

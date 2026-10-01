@@ -20,7 +20,7 @@ deploy/kubernetes/           # Kustomize-based k8s manifests (sidecar pattern)
 
 - **Webhook interface**: external-dns calls us via HTTP (`GET /`, `GET /records`, `POST /records`, `POST /adjustendpoints`)
 - **NextDNS Rewrites**: A, AAAA, CNAME only. No native update — uses delete + create. SDK: `github.com/amalucelli/nextdns-go`
-- **Overwrite protection**: Per-record via annotation `external-dns.alpha.kubernetes.io/nextdns-allow-overwrite: "true"`. Default: blocked.
+- **Overwrite protection**: Per-record via annotation `external-dns.kubernetes.io/webhook-nextdns-allow-overwrite: "true"`. Default: blocked.
 - **Dry-run mode**: `DRY_RUN=true` previews changes without API calls
 - **Retry**: Exponential backoff (3 retries) for transient/5xx/429 errors
 

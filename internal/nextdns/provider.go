@@ -11,10 +11,10 @@ import (
 	"sigs.k8s.io/external-dns/provider"
 )
 
-// overwriteAnnotationKey is the Kubernetes annotation key used to control
+// overwriteAnnotationKey is the forwarded webhook property name used to control
 // per-record overwrite behavior. When set to "true" (case-insensitive),
 // it allows the provider to overwrite existing DNS records.
-const overwriteAnnotationKey = "external-dns.alpha.kubernetes.io/nextdns-allow-overwrite"
+const overwriteAnnotationKey = "webhook/nextdns-allow-overwrite"
 
 // Provider implements the external-dns provider interface for NextDNS
 type Provider struct {
@@ -248,7 +248,7 @@ func (p *Provider) createRecord(ctx context.Context, ep *endpoint.Endpoint) erro
 			// Record exists - check overwrite policy via annotation
 			if !parseOverwriteAnnotation(ep) {
 				// Emit warning and skip
-				slog.Warn("Record already exists and will NOT be overwritten. To allow overwrite, add annotation: "+overwriteAnnotationKey+": \"true\"",
+				slog.Warn("Record already exists and will NOT be overwritten. To allow overwrite, add annotation: external-dns.kubernetes.io/webhook-nextdns-allow-overwrite: \"true\"",
 					"dns_name", ep.DNSName,
 					"record_type", ep.RecordType,
 					"current_value", existing.Content,
