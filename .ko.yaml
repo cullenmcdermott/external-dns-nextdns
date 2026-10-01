@@ -1,1 +1,7 @@
 defaultBaseImage: cgr.dev/chainguard/static:latest
+builds:
+  - id: webhook
+    dir: .
+    main: ./cmd/webhook
+    ldflags:
+      - -s -w -X main.Version={{.Env.RELEASE_VERSION}}

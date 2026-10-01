@@ -87,7 +87,7 @@ jobs:
             --tags=${{ github.ref_name }},latest
         env:
           KO_DOCKER_REPO: ghcr.io/${{ github.actor }}/external-dns-nextdns-webhook
-          GOFLAGS: -ldflags=-s -w -X main.Version=${{ github.ref_name }}
+          RELEASE_VERSION: ${{ github.ref_name }}
 
       - name: Generate Changelog
         run: flox activate -- git-cliff --config cliff.toml --latest --strip header -o CHANGELOG.md
