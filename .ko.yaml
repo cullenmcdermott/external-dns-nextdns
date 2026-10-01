@@ -4,4 +4,4 @@ builds:
     dir: .
     main: ./cmd/webhook
     ldflags:
-      - -s -w -X main.Version={{.Env.RELEASE_VERSION}}
+      - -s -w -X main.Version={{ or (index .Env "RELEASE_VERSION") "dev" }}
