@@ -83,6 +83,7 @@ jobs:
       - name: Build and push multi-platform image
         run: |
           flox activate -- ko build ./cmd/webhook \
+            --bare \
             --platform=linux/amd64,linux/arm64 \
             --tags=${{ github.ref_name }},latest
         env:

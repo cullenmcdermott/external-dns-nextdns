@@ -25,9 +25,9 @@
         "pkg-path": "git-cliff"
       },
       "go": {
-        "pkg-path": "go_1_27",
+        "pkg-path": "go_1_26",
         "pkg-group": "go",
-        "version": "1.27.3"
+        "version": "1.26.9"
       },
       "go-tools": {
         "pkg-path": "gotools"
@@ -96,93 +96,6 @@
     }
   },
   "packages": [
-    {
-      "attr_path": "go_1_27",
-      "broken": false,
-      "derivation": "/nix/store/j1jvy5hyp5x6mrrasmjw8i3g0b6k6h2s-go-1.27.3.drv",
-      "description": "Go Programming language",
-      "install_id": "go",
-      "license": "BSD-3-Clause",
-      "locked_url": "https://github.com/flox/nixpkgs?rev=02c087f3fe673c9e317f206a627cb6b910336dbe",
-      "name": "go-1.27.3",
-      "pname": "go_1_27",
-      "rev": "02c087f3fe673c9e317f206a627cb6b910336dbe",
-      "rev_count": 1097682,
-      "rev_date": "2026-10-20T13:28:04Z",
-      "scrape_date": "2026-10-21T05:50:28.845742Z",
-      "stabilities": [
-        "unstable"
-      ],
-      "unfree": false,
-      "version": "1.27.3",
-      "outputs_to_install": [
-        "out"
-      ],
-      "outputs": {
-        "out": "/nix/store/s5m10yz53f8778k4mi1irdqzy8iaqri1-go-1.27.3"
-      },
-      "system": "aarch64-darwin",
-      "group": "go",
-      "priority": 5
-    },
-    {
-      "attr_path": "go_1_27",
-      "broken": false,
-      "derivation": "/nix/store/4s0p9iaqyczl5hd1ky1f24rgc0pvp18x-go-1.27.3.drv",
-      "description": "Go Programming language",
-      "install_id": "go",
-      "license": "BSD-3-Clause",
-      "locked_url": "https://github.com/flox/nixpkgs?rev=02c087f3fe673c9e317f206a627cb6b910336dbe",
-      "name": "go-1.27.3",
-      "pname": "go_1_27",
-      "rev": "02c087f3fe673c9e317f206a627cb6b910336dbe",
-      "rev_count": 1097682,
-      "rev_date": "2026-10-20T13:28:04Z",
-      "scrape_date": "2026-10-21T06:26:17.254234Z",
-      "stabilities": [
-        "unstable"
-      ],
-      "unfree": false,
-      "version": "1.27.3",
-      "outputs_to_install": [
-        "out"
-      ],
-      "outputs": {
-        "out": "/nix/store/0940szmkaskjshd3z0gp2m2kfxcnc424-go-1.27.3"
-      },
-      "system": "aarch64-linux",
-      "group": "go",
-      "priority": 5
-    },
-    {
-      "attr_path": "go_1_27",
-      "broken": false,
-      "derivation": "/nix/store/4j90ccks30b6r79y4zp8lq8kcxgfxy3q-go-1.27.3.drv",
-      "description": "Go Programming language",
-      "install_id": "go",
-      "license": "BSD-3-Clause",
-      "locked_url": "https://github.com/flox/nixpkgs?rev=02c087f3fe673c9e317f206a627cb6b910336dbe",
-      "name": "go-1.27.3",
-      "pname": "go_1_27",
-      "rev": "02c087f3fe673c9e317f206a627cb6b910336dbe",
-      "rev_count": 1097682,
-      "rev_date": "2026-10-20T13:28:04Z",
-      "scrape_date": "2026-10-21T07:05:52.648041Z",
-      "stabilities": [
-        "unstable"
-      ],
-      "unfree": false,
-      "version": "1.27.3",
-      "outputs_to_install": [
-        "out"
-      ],
-      "outputs": {
-        "out": "/nix/store/1fng2iqlx5y8rqvhjp9203mymzyny6cz-go-1.27.3"
-      },
-      "system": "x86_64-linux",
-      "group": "go",
-      "priority": 5
-    },
     {
       "attr_path": "ctlptl",
       "broken": false,
@@ -2000,6 +1913,93 @@
       },
       "system": "x86_64-linux",
       "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "go_1_26",
+      "broken": false,
+      "derivation": "/nix/store/9jciyqiw5gf4rnsh11lkm3d7fabayi6h-go-1.26.9.drv",
+      "description": "Go Programming language",
+      "install_id": "go",
+      "license": "BSD-3-Clause",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=02c087f3fe673c9e317f206a627cb6b910336dbe",
+      "name": "go-1.26.9",
+      "pname": "go_1_26",
+      "rev": "02c087f3fe673c9e317f206a627cb6b910336dbe",
+      "rev_count": 1097682,
+      "rev_date": "2026-10-20T13:28:04Z",
+      "scrape_date": "2026-10-21T05:50:28.845738Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "1.26.9",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/r974sx9m1635ajfp7yx5vyxg4bczd218-go-1.26.9"
+      },
+      "system": "aarch64-darwin",
+      "group": "go",
+      "priority": 5
+    },
+    {
+      "attr_path": "go_1_26",
+      "broken": false,
+      "derivation": "/nix/store/16l03ry50isrjgw2kidcff5b1rq672rf-go-1.26.9.drv",
+      "description": "Go Programming language",
+      "install_id": "go",
+      "license": "BSD-3-Clause",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=02c087f3fe673c9e317f206a627cb6b910336dbe",
+      "name": "go-1.26.9",
+      "pname": "go_1_26",
+      "rev": "02c087f3fe673c9e317f206a627cb6b910336dbe",
+      "rev_count": 1097682,
+      "rev_date": "2026-10-20T13:28:04Z",
+      "scrape_date": "2026-10-21T06:26:17.254231Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "1.26.9",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/821rq90cnzv3fvcb485wisy7qw67sw0x-go-1.26.9"
+      },
+      "system": "aarch64-linux",
+      "group": "go",
+      "priority": 5
+    },
+    {
+      "attr_path": "go_1_26",
+      "broken": false,
+      "derivation": "/nix/store/gdhra4k754ab3wl8fj9rskfwkbnkyysi-go-1.26.9.drv",
+      "description": "Go Programming language",
+      "install_id": "go",
+      "license": "BSD-3-Clause",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=02c087f3fe673c9e317f206a627cb6b910336dbe",
+      "name": "go-1.26.9",
+      "pname": "go_1_26",
+      "rev": "02c087f3fe673c9e317f206a627cb6b910336dbe",
+      "rev_count": 1097682,
+      "rev_date": "2026-10-20T13:28:04Z",
+      "scrape_date": "2026-10-21T07:05:52.648037Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "1.26.9",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/bbqjsl8fzayd8c2i63skp7hybysvwr03-go-1.26.9"
+      },
+      "system": "x86_64-linux",
+      "group": "go",
       "priority": 5
     }
   ]
