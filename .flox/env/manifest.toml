@@ -4,7 +4,9 @@ schema-version = "1.11.0"
 
 [install]
 # Go toolchain
-go.pkg-path = "go"
+go.pkg-path = "go_1_27"
+go.pkg-group = "go"
+go.version = "1.27.3"
 
 # Go development tools
 golangci-lint.pkg-path = "golangci-lint"
@@ -115,3 +117,6 @@ kubectl config use-context "${KIND_CLUSTER_NAME}"
 kubectl wait --for=condition=Ready nodes --all --timeout=90s
 tilt up --host 0.0.0.0 --port 10350
 """
+
+[options]
+systems = ["aarch64-darwin", "aarch64-linux", "x86_64-linux"]
